@@ -125,6 +125,7 @@ public class ImageLab {
 
         // Create a JMapFrame with a menu to choose the display style for the
         frame = new JMapFrame(map);
+        frame.enableLayerTable(true);
         frame.setSize(800, 600);
         frame.enableStatusBar(true);
         // frame.enableTool(JMapFrame.Tool.ZOOM, JMapFrame.Tool.PAN, JMapFrame.Tool.RESET);
