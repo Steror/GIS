@@ -102,9 +102,8 @@ public class ImageLab {
         }
         reader = format.getReader(rasterFile, hints);
 
-        // Initially display the raster in greyscale using the
-        // data from the first image band
-        Style rasterStyle = createGreyscaleStyle(1);
+        // Initially display the raster in RGB
+        Style rasterStyle = createRGBStyle();
 
         // Connect to the shapefile
         FileDataStore dataStore = FileDataStoreFinder.getDataStore(shpFile);
