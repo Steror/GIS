@@ -51,6 +51,7 @@ import org.opengis.filter.identity.FeatureId;
  *     http://svn.osgeo.org/geotools/trunk/demo/example/src/main/java/org/geotools/demo/SelectionLab.java
  *     $
  */
+@SuppressWarnings("ALL")
 public class SelectionLab {
 
     /*

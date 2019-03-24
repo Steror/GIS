@@ -1,14 +1,17 @@
 package org.geotools.tutorial.map;
 
-import java.awt.Color;
+import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JOptionPane;
+import java.util.Set;
+import javax.swing.*;
+
 import org.geotools.coverage.GridSampleDimension;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
@@ -17,28 +20,36 @@ import org.geotools.coverage.grid.io.GridFormatFinder;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
 import org.geotools.data.Parameter;
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
 import org.geotools.gce.geotiff.GeoTiffFormat;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.GridReaderLayer;
 import org.geotools.map.Layer;
 import org.geotools.map.MapContent;
 import org.geotools.map.StyleLayer;
-import org.geotools.styling.ChannelSelection;
-import org.geotools.styling.ContrastEnhancement;
-import org.geotools.styling.RasterSymbolizer;
-import org.geotools.styling.SLD;
-import org.geotools.styling.SelectedChannelType;
-import org.geotools.styling.Style;
-import org.geotools.styling.StyleFactory;
+import org.geotools.styling.*;
+import org.geotools.styling.Stroke;
 import org.geotools.swing.JMapFrame;
 import org.geotools.swing.action.SafeAction;
 import org.geotools.swing.data.JParameterListWizard;
+import org.geotools.swing.event.MapMouseEvent;
+import org.geotools.swing.tool.CursorTool;
 import org.geotools.swing.wizard.JWizard;
+import org.geotools.tutorial.style.SelectionLab;
 import org.geotools.util.KVP;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.type.GeometryDescriptor;
+import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.filter.identity.FeatureId;
 import org.opengis.style.ContrastMethod;
 
 @SuppressWarnings("Duplicates")
@@ -49,6 +60,30 @@ public class Map {
 
     private JMapFrame frame;
     private GridCoverage2DReader reader;
+
+    /*
+     * Convenient constants for the type of feature geometry in the shapefile
+     */
+    private enum GeomType {
+        POINT,
+        LINE,
+        POLYGON
+    }
+
+    /*
+     * Some default style variables
+     */
+    private static final Color LINE_COLOUR = Color.BLUE;
+    private static final Color FILL_COLOUR = Color.CYAN;
+    private static final Color SELECTED_COLOUR = Color.YELLOW;
+    private static final float OPACITY = 1.0f;
+    private static final float LINE_WIDTH = 1.0f;
+    private static final float POINT_SIZE = 10.0f;
+
+    private SimpleFeatureSource featureSource;
+
+    private String geometryAttributeName;
+    private Map.GeomType geometryType;
 
     public static void main(String[] args) throws Exception {
         Map me = new Map();
@@ -110,6 +145,10 @@ public class Map {
         FileDataStore dataStore = FileDataStoreFinder.getDataStore(shpFile);
         SimpleFeatureSource shapefileSource = dataStore.getFeatureSource();
 
+        FileDataStore store = FileDataStoreFinder.getDataStore(shpFile);
+        featureSource = store.getFeatureSource();
+        setGeometry();
+
         // Create a basic style with yellow lines and no fill
         Style shpStyle = SLD.createPolygonStyle(Color.YELLOW, null, 0.0f);
 
@@ -157,6 +196,34 @@ public class Map {
                         }
                     }
                 });
+        /*
+         * Before making the map frame visible we add a new button to its
+         * toolbar for our custom feature selection tool
+         */
+        JToolBar toolBar = frame.getToolBar();
+        JButton btn = new JButton("Select");
+        toolBar.addSeparator();
+        toolBar.add(btn);
+
+        /*
+         * When the user clicks the button we want to enable
+         * our custom feature selection tool. Since the only
+         * mouse action we are interested in is 'clicked', and
+         * we are not creating control icons or cursors here,
+         * we can just create our tool as an anonymous sub-class
+         * of CursorTool.
+         */
+        btn.addActionListener(
+                e ->
+                        frame.getMapPane()
+                                .setCursorTool(
+                                        new CursorTool() {
+
+                                            @Override
+                                            public void onMouseClicked(MapMouseEvent ev) {
+                                                selectFeatures(ev);
+                                            }
+                                        }));
         // Finally display the map frame.
         // When it is closed the app will exit.
         frame.setVisible(true);
@@ -275,5 +342,177 @@ public class Map {
         sym.setChannelSelection(sel);
 
         return SLD.wrapSymbolizers(sym);
+    }
+    /**
+     * This method is called by our feature selection tool when the user has clicked on the map.
+     *
+     * @param ev the mouse event being handled
+     */
+    void selectFeatures(MapMouseEvent ev) {
+
+        System.out.println("Mouse click at: " + ev.getMapPosition());
+
+        /*
+         * Construct a 5x5 pixel rectangle centred on the mouse click position
+         */
+        Point screenPos = ev.getPoint();
+        Rectangle screenRect = new Rectangle(screenPos.x - 2, screenPos.y - 2, 5, 5);
+
+        /*
+         * Transform the screen rectangle into bounding box in the coordinate
+         * reference system of our map context. Note: we are using a naive method
+         * here but GeoTools also offers other, more accurate methods.
+         */
+        AffineTransform screenToWorld = frame.getMapPane().getScreenToWorldTransform();
+        Rectangle2D worldRect = screenToWorld.createTransformedShape(screenRect).getBounds2D();
+        ReferencedEnvelope bbox =
+                new ReferencedEnvelope(
+                        worldRect, frame.getMapContent().getCoordinateReferenceSystem());
+
+        /*
+         * Create a Filter to select features that intersect with
+         * the bounding box
+         */
+        Filter filter = ff.intersects(ff.property(geometryAttributeName), ff.literal(bbox));
+
+        /*
+         * Use the filter to identify the selected features
+         */
+        try {
+            SimpleFeatureCollection selectedFeatures = featureSource.getFeatures(filter);
+
+            Set<FeatureId> IDs = new HashSet<>();
+            try (SimpleFeatureIterator iter = selectedFeatures.features()) {
+                while (iter.hasNext()) {
+                    SimpleFeature feature = iter.next();
+                    IDs.add(feature.getIdentifier());
+
+                    System.out.println("   " + feature.getIdentifier());
+                }
+            }
+
+            if (IDs.isEmpty()) {
+                System.out.println("   no feature selected");
+            }
+
+            displaySelectedFeatures(IDs);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    /**
+     * Sets the display to paint selected features yellow and unselected features in the default
+     * style.
+     *
+     * @param IDs identifiers of currently selected features
+     */
+    public void displaySelectedFeatures(Set<FeatureId> IDs) {
+        Style style;
+
+        if (IDs.isEmpty()) {
+            style = createDefaultStyle();
+
+        } else {
+            style = createSelectedStyle(IDs);
+        }
+
+        Layer layer = frame.getMapContent().layers().get(0);
+        ((FeatureLayer) layer).setStyle(style);
+        frame.getMapPane().repaint();
+    }
+    /**
+     * Create a default Style for feature display
+     */
+    private Style createDefaultStyle() {
+        Rule rule = createRule(LINE_COLOUR, FILL_COLOUR);
+
+        FeatureTypeStyle fts = sf.createFeatureTypeStyle();
+        fts.rules().add(rule);
+
+        Style style = sf.createStyle();
+        style.featureTypeStyles().add(fts);
+        return style;
+    }
+
+    /**
+     * Create a Style where features with given IDs are painted yellow, while others are painted
+     * with the default colors.
+     */
+    private Style createSelectedStyle(Set<FeatureId> IDs) {
+        Rule selectedRule = createRule(SELECTED_COLOUR, SELECTED_COLOUR);
+        selectedRule.setFilter(ff.id(IDs));
+
+        Rule otherRule = createRule(LINE_COLOUR, FILL_COLOUR);
+        otherRule.setElseFilter(true);
+
+        FeatureTypeStyle fts = sf.createFeatureTypeStyle();
+        fts.rules().add(selectedRule);
+        fts.rules().add(otherRule);
+
+        Style style = sf.createStyle();
+        style.featureTypeStyles().add(fts);
+        return style;
+    }
+
+    /**
+     * Helper for createXXXStyle methods. Creates a new Rule containing a Symbolizer tailored to the
+     * geometry type of the features that we are displaying.
+     */
+    private Rule createRule(Color outlineColor, Color fillColor) {
+        Symbolizer symbolizer = null;
+        Fill fill = null;
+        Stroke stroke = sf.createStroke(ff.literal(outlineColor), ff.literal(LINE_WIDTH));
+
+        switch (geometryType) {
+            case POLYGON:
+                fill = sf.createFill(ff.literal(fillColor), ff.literal(OPACITY));
+                symbolizer = sf.createPolygonSymbolizer(stroke, fill, geometryAttributeName);
+                break;
+
+            case LINE:
+                symbolizer = sf.createLineSymbolizer(stroke, geometryAttributeName);
+                break;
+
+            case POINT:
+                fill = sf.createFill(ff.literal(fillColor), ff.literal(OPACITY));
+
+                Mark mark = sf.getCircleMark();
+                mark.setFill(fill);
+                mark.setStroke(stroke);
+
+                Graphic graphic = sf.createDefaultGraphic();
+                graphic.graphicalSymbols().clear();
+                graphic.graphicalSymbols().add(mark);
+                graphic.setSize(ff.literal(POINT_SIZE));
+
+                symbolizer = sf.createPointSymbolizer(graphic, geometryAttributeName);
+        }
+
+        Rule rule = sf.createRule();
+        rule.symbolizers().add(symbolizer);
+        return rule;
+    }
+
+    /**
+     * Retrieve information about the feature geometry
+     */
+    private void setGeometry() {
+        GeometryDescriptor geomDesc = featureSource.getSchema().getGeometryDescriptor();
+        geometryAttributeName = geomDesc.getLocalName();
+
+        Class<?> clazz = geomDesc.getType().getBinding();
+
+        if (org.locationtech.jts.geom.Polygon.class.isAssignableFrom(clazz) || MultiPolygon.class.isAssignableFrom(clazz)) {
+            geometryType = Map.GeomType.POLYGON;
+
+        } else if (LineString.class.isAssignableFrom(clazz)
+                || MultiLineString.class.isAssignableFrom(clazz)) {
+
+            geometryType = Map.GeomType.LINE;
+
+        } else {
+            geometryType = Map.GeomType.POINT;
+        }
     }
 }
