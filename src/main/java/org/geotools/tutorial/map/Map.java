@@ -55,6 +55,7 @@ import org.opengis.style.ContrastMethod;
 @SuppressWarnings("Duplicates")
 public class Map {
 
+    private static Point startScreenPos;
     private StyleFactory sf = CommonFactoryFinder.getStyleFactory();
     private FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
 
@@ -201,9 +202,9 @@ public class Map {
          * toolbar for our custom feature selection tool
          */
         JToolBar toolBar = frame.getToolBar();
-        JButton btn = new JButton("Select");
+        JButton SelectButton = new JButton("Select");
         toolBar.addSeparator();
-        toolBar.add(btn);
+        toolBar.add(SelectButton);
 
         /*
          * When the user clicks the button we want to enable
@@ -213,7 +214,7 @@ public class Map {
          * we can just create our tool as an anonymous sub-class
          * of CursorTool.
          */
-        btn.addActionListener(
+        SelectButton.addActionListener(
                 e ->
                         frame.getMapPane()
                                 .setCursorTool(
@@ -222,6 +223,29 @@ public class Map {
                                             @Override
                                             public void onMouseClicked(MapMouseEvent ev) {
                                                 selectFeatures(ev);
+                                            }
+                                        }));
+        SelectButton.addActionListener(
+                e ->
+                        frame.getMapPane()
+                                .setCursorTool(
+                                        new CursorTool() {
+
+                                            @Override
+                                            public void onMousePressed(MapMouseEvent ev) {
+                                                System.out.println("Mouse press at: " + ev.getMapPosition());
+                                                startScreenPos = ev.getPoint();
+                                            }
+                                        }));
+        SelectButton.addActionListener(
+                e ->
+                        frame.getMapPane()
+                                .setCursorTool(
+                                        new CursorTool() {
+
+                                            @Override
+                                            public void onMouseReleased(MapMouseEvent ev) {
+                                                selectBoxFeatures(startScreenPos, ev);
                                             }
                                         }));
         // Finally display the map frame.
@@ -358,6 +382,59 @@ public class Map {
         Point screenPos = ev.getPoint();
         Rectangle screenRect = new Rectangle(screenPos.x - 2, screenPos.y - 2, 5, 5);
 
+        /*
+         * Transform the screen rectangle into bounding box in the coordinate
+         * reference system of our map context. Note: we are using a naive method
+         * here but GeoTools also offers other, more accurate methods.
+         */
+        AffineTransform screenToWorld = frame.getMapPane().getScreenToWorldTransform();
+        Rectangle2D worldRect = screenToWorld.createTransformedShape(screenRect).getBounds2D();
+        ReferencedEnvelope bbox =
+                new ReferencedEnvelope(
+                        worldRect, frame.getMapContent().getCoordinateReferenceSystem());
+
+        /*
+         * Create a Filter to select features that intersect with
+         * the bounding box
+         */
+        Filter filter = ff.intersects(ff.property(geometryAttributeName), ff.literal(bbox));
+
+        /*
+         * Use the filter to identify the selected features
+         */
+        try {
+            SimpleFeatureCollection selectedFeatures = featureSource.getFeatures(filter);
+
+            Set<FeatureId> IDs = new HashSet<>();
+            try (SimpleFeatureIterator iter = selectedFeatures.features()) {
+                while (iter.hasNext()) {
+                    SimpleFeature feature = iter.next();
+                    IDs.add(feature.getIdentifier());
+
+                    System.out.println("   " + feature.getIdentifier());
+                }
+            }
+
+            if (IDs.isEmpty()) {
+                System.out.println("   no feature selected");
+            }
+
+            displaySelectedFeatures(IDs);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     *MousePressed and MouseReleased select
+     */
+    void selectBoxFeatures(Point startScreenPos, MapMouseEvent ev)
+    {
+        System.out.println("Mouse release at: " + ev.getMapPosition());
+
+        Point endScreenPos = ev.getPoint();
+        Rectangle screenRect = new Rectangle(endScreenPos.x - startScreenPos.x, endScreenPos.y - startScreenPos.x);
         /*
          * Transform the screen rectangle into bounding box in the coordinate
          * reference system of our map context. Note: we are using a naive method
