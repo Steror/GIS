@@ -135,7 +135,7 @@ public class SelectionLab {
         /*
          * When the user clicks the button we want to enable
          * our custom feature selection tool. Since the only
-         * mouse action we are intersted in is 'clicked', and
+         * mouse action we are interested in is 'clicked', and
          * we are not creating control icons or cursors here,
          * we can just create our tool as an anonymous sub-class
          * of CursorTool.
