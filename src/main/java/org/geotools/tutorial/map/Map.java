@@ -417,7 +417,7 @@ public class Map {
             style = createSelectedStyle(IDs);
         }
 
-        Layer layer = frame.getMapContent().layers().get(0);
+        Layer layer = frame.getMapContent().layers().get(1);
         ((FeatureLayer) layer).setStyle(style);
         frame.getMapPane().repaint();
     }
