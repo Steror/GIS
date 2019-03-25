@@ -40,7 +40,6 @@ import org.geotools.swing.data.JParameterListWizard;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.CursorTool;
 import org.geotools.swing.wizard.JWizard;
-import org.geotools.tutorial.style.SelectionLab;
 import org.geotools.util.KVP;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
@@ -74,10 +73,11 @@ public class Map {
     /*
      * Some default style variables
      */
-    private static final Color LINE_COLOUR = Color.BLUE;
+    private static final Color LINE_COLOUR = Color.RED;
     private static final Color FILL_COLOUR = Color.CYAN;
     private static final Color SELECTED_COLOUR = Color.YELLOW;
-    private static final float OPACITY = 1.0f;
+    private static final float DEFAULT_OPACITY = 0.0f;
+    private static final float OPACITY = 0.5f;
     private static final float LINE_WIDTH = 1.0f;
     private static final float POINT_SIZE = 10.0f;
 
@@ -502,7 +502,7 @@ public class Map {
      * Create a default Style for feature display
      */
     private Style createDefaultStyle() {
-        Rule rule = createRule(LINE_COLOUR, FILL_COLOUR);
+        Rule rule = createRule(LINE_COLOUR, FILL_COLOUR, DEFAULT_OPACITY);
 
         FeatureTypeStyle fts = sf.createFeatureTypeStyle();
         fts.rules().add(rule);
@@ -517,10 +517,10 @@ public class Map {
      * with the default colors.
      */
     private Style createSelectedStyle(Set<FeatureId> IDs) {
-        Rule selectedRule = createRule(SELECTED_COLOUR, SELECTED_COLOUR);
+        Rule selectedRule = createRule(SELECTED_COLOUR, SELECTED_COLOUR, OPACITY);
         selectedRule.setFilter(ff.id(IDs));
 
-        Rule otherRule = createRule(LINE_COLOUR, FILL_COLOUR);
+        Rule otherRule = createRule(LINE_COLOUR, FILL_COLOUR, DEFAULT_OPACITY);
         otherRule.setElseFilter(true);
 
         FeatureTypeStyle fts = sf.createFeatureTypeStyle();
@@ -536,14 +536,14 @@ public class Map {
      * Helper for createXXXStyle methods. Creates a new Rule containing a Symbolizer tailored to the
      * geometry type of the features that we are displaying.
      */
-    private Rule createRule(Color outlineColor, Color fillColor) {
+    private Rule createRule(Color outlineColor, Color fillColor, float fillOpacity) {
         Symbolizer symbolizer = null;
         Fill fill = null;
         Stroke stroke = sf.createStroke(ff.literal(outlineColor), ff.literal(LINE_WIDTH));
 
         switch (geometryType) {
             case POLYGON:
-                fill = sf.createFill(ff.literal(fillColor), ff.literal(OPACITY));
+                fill = sf.createFill(ff.literal(fillColor), ff.literal(fillOpacity));
                 symbolizer = sf.createPolygonSymbolizer(stroke, fill, geometryAttributeName);
                 break;
 
