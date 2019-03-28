@@ -15,8 +15,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/map/Map.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="289">
-              <caret line="385" column="33" selection-start-line="385" selection-start-column="33" selection-end-line="385" selection-end-column="33" />
+            <state relative-caret-position="203">
+              <caret line="59" selection-start-line="59" selection-end-line="59" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -27,21 +27,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="jar://$MAVEN_REPOSITORY$/org/geotools/gt-swing/20-SNAPSHOT/gt-swing-20-20190322.150900-237.jar!/org/geotools/swing/JMapFrame.class">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="283">
+            <state relative-caret-position="2890">
               <caret line="215" column="69" selection-start-line="215" selection-start-column="69" selection-end-line="215" selection-end-column="69" />
-              <folding>
-                <element signature="e#4626#4627#0" expanded="true" />
-                <element signature="e#4671#4672#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="jar://$MAVEN_REPOSITORY$/org/geotools/gt-swing/20-SNAPSHOT/gt-swing-20-20190322.150900-237.jar!/org/geotools/swing/MapLayerTable.class">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="340">
-              <caret line="55" column="43" selection-start-line="55" selection-start-column="32" selection-end-line="55" selection-end-column="43" />
+            <state relative-caret-position="1343">
+              <caret line="124" column="60" selection-start-line="124" selection-start-column="49" selection-end-line="124" selection-end-column="60" />
             </state>
           </provider>
         </entry>
@@ -51,6 +47,40 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="102">
               <caret line="25" column="13" selection-start-line="25" selection-start-column="13" selection-end-line="25" selection-end-column="13" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pom.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="214">
+              <caret line="34" column="36" selection-start-line="34" selection-start-column="36" selection-end-line="34" selection-end-column="36" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/filter/QueryLab.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="2394">
+              <caret line="173" column="69" lean-forward="true" selection-start-line="173" selection-start-column="69" selection-end-line="173" selection-end-column="69" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#1737#1764#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/style/StyleLab.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="367">
+              <caret line="133" column="48" selection-start-line="133" selection-start-column="48" selection-end-line="133" selection-end-column="48" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -90,11 +120,12 @@
         <option value="$PROJECT_DIR$/src/main/java/org/geotools/tutorial/quickstart/Quickstart.java" />
         <option value="$PROJECT_DIR$/src/main/java/org/geotools/tutorial/feature/Csv2Shape.java" />
         <option value="$PROJECT_DIR$/src/main/java/org/geotools/tutorial/raster/ImageLab.java" />
-        <option value="$PROJECT_DIR$/pom.xml" />
-        <option value="$PROJECT_DIR$/src/main/java/org/geotools/tutorial/style/StyleLab.java" />
         <option value="$PROJECT_DIR$/src/main/java/org/geotools/tutorial/map/MyMap.java" />
         <option value="$PROJECT_DIR$/src/main/java/org/geotools/tutorial/style/SelectionLab.java" />
         <option value="$PROJECT_DIR$/src/main/java/org/geotools/tutorial/map/Map.java" />
+        <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/src/main/java/org/geotools/tutorial/filter/QueryLab.java" />
+        <option value="$PROJECT_DIR$/src/main/java/org/geotools/tutorial/style/StyleLab.java" />
       </list>
     </option>
   </component>
@@ -116,7 +147,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
@@ -158,6 +188,15 @@
               <item name="main" type="462c0819:PsiDirectoryNode" />
               <item name="java" type="462c0819:PsiDirectoryNode" />
               <item name="tutorial" type="462c0819:PsiDirectoryNode" />
+              <item name="filter" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="tutorial" type="b2602c69:ProjectViewProjectNode" />
+              <item name="GIS-Application" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="tutorial" type="462c0819:PsiDirectoryNode" />
               <item name="map" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -187,21 +226,17 @@
               <item name="tutorial" type="462c0819:PsiDirectoryNode" />
               <item name="style" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="tutorial" type="b2602c69:ProjectViewProjectNode" />
-              <item name="GIS-Application" type="462c0819:PsiDirectoryNode" />
-              <item name="target" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1553519237549" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1553766803963" />
     <property name="settings.editor.selected.configurable" value="editor.preferences.tabs" />
   </component>
   <component name="RunDashboard">
@@ -216,7 +251,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.Map">
+  <component name="RunManager" selected="Application.StyleLab">
     <configuration name="ImageLab" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.geotools.tutorial.raster.ImageLab" />
       <module name="GIS-Application" />
@@ -243,12 +278,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Quickstart" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.geotools.tutorial.quickstart.Quickstart" />
+    <configuration name="QueryLab" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.geotools.tutorial.filter.QueryLab" />
       <module name="GIS-Application" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="org.geotools.tutorial.quickstart.*" />
+          <option name="PATTERN" value="org.geotools.tutorial.filter.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -284,11 +319,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.StyleLab" />
+        <item itemvalue="Application.QueryLab" />
         <item itemvalue="Application.Map" />
         <item itemvalue="Application.SelectionLab" />
-        <item itemvalue="Application.StyleLab" />
         <item itemvalue="Application.ImageLab" />
-        <item itemvalue="Application.Quickstart" />
       </list>
     </recent_temporary>
   </component>
@@ -305,12 +340,14 @@
       <workItem from="1553350934940" duration="596000" />
       <workItem from="1553351545226" duration="9117000" />
       <workItem from="1553414687933" duration="30927000" />
-      <workItem from="1553509271965" duration="6931000" />
+      <workItem from="1553509271965" duration="8873000" />
+      <workItem from="1553762318757" duration="1016000" />
+      <workItem from="1553763615665" duration="2302000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="47571000" />
+    <option name="totallyTimeSpent" value="52831000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -325,7 +362,7 @@
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.18336888" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18763326" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Image Layers" order="2" />
       <window_info id="Designer" order="3" />
@@ -334,7 +371,7 @@
       <window_info id="Favorites" order="6" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" sideWeight="0.49946696" weight="0.32936078" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.48827294" visible="true" weight="0.32936078" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.48720682" visible="true" weight="0.32936078" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -343,8 +380,8 @@
       <window_info anchor="bottom" id="Version Control" order="8" />
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Terminal" order="10" weight="0.32936078" />
-      <window_info anchor="bottom" id="Event Log" order="11" sideWeight="0.5117271" side_tool="true" visible="true" weight="0.32936078" />
-      <window_info anchor="bottom" id="Messages" order="12" sideWeight="0.4904051" weight="0.30985916" />
+      <window_info anchor="bottom" id="Event Log" order="11" sideWeight="0.5127932" side_tool="true" visible="true" weight="0.32936078" />
+      <window_info anchor="bottom" id="Messages" order="12" sideWeight="0.48933902" weight="0.30985916" />
       <window_info anchor="bottom" id="Duplicate detector" order="13" sideWeight="0.4989339" weight="0.32936078" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -549,16 +586,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/style/StyleLab.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="125" column="60" lean-forward="true" selection-start-line="125" selection-start-column="60" selection-end-line="125" selection-end-column="60" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/raster/ImageLab.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="560">
@@ -640,10 +667,27 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pom.xml">
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/map/Map.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="18" column="30" selection-start-line="18" selection-start-column="30" selection-end-line="18" selection-end-column="30" />
+        <state relative-caret-position="203">
+          <caret line="59" selection-start-line="59" selection-end-line="59" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/org/geotools/gt-swing/20-SNAPSHOT/gt-swing-20-20190322.150900-237.jar!/org/geotools/swing/JMapFrame.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2890">
+          <caret line="215" column="69" selection-start-line="215" selection-start-column="69" selection-end-line="215" selection-end-column="69" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/org/geotools/gt-swing/20-SNAPSHOT/gt-swing-20-20190322.150900-237.jar!/org/geotools/swing/MapLayerTable.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1343">
+          <caret line="124" column="60" selection-start-line="124" selection-start-column="49" selection-end-line="124" selection-end-column="60" />
         </state>
       </provider>
     </entry>
@@ -654,31 +698,31 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/geotools/gt-swing/20-SNAPSHOT/gt-swing-20-20190322.150900-237.jar!/org/geotools/swing/JMapFrame.class">
+    <entry file="file://$PROJECT_DIR$/pom.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="283">
-          <caret line="215" column="69" selection-start-line="215" selection-start-column="69" selection-end-line="215" selection-end-column="69" />
+        <state relative-caret-position="214">
+          <caret line="34" column="36" selection-start-line="34" selection-start-column="36" selection-end-line="34" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/filter/QueryLab.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2394">
+          <caret line="173" column="69" lean-forward="true" selection-start-line="173" selection-start-column="69" selection-end-line="173" selection-end-column="69" />
           <folding>
-            <element signature="e#4626#4627#0" expanded="true" />
-            <element signature="e#4671#4672#0" expanded="true" />
+            <element signature="imports" expanded="true" />
+            <element signature="e#1737#1764#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/map/Map.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/style/StyleLab.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="385" column="33" selection-start-line="385" selection-start-column="33" selection-end-line="385" selection-end-column="33" />
+        <state relative-caret-position="367">
+          <caret line="133" column="48" selection-start-line="133" selection-start-column="48" selection-end-line="133" selection-end-column="48" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/geotools/gt-swing/20-SNAPSHOT/gt-swing-20-20190322.150900-237.jar!/org/geotools/swing/MapLayerTable.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="340">
-          <caret line="55" column="43" selection-start-line="55" selection-start-column="32" selection-end-line="55" selection-end-column="43" />
         </state>
       </provider>
     </entry>

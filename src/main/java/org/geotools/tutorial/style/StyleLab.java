@@ -126,20 +126,20 @@ public class StyleLab {
      * works out what sort of feature geometry we have in the shapefile and then delegates to an
      * appropriate style creating method.
      */
-    //private Style createStyle2(FeatureSource featureSource) {
-    //    SimpleFeatureType schema = (SimpleFeatureType) featureSource.getSchema();
-    //    Class geomType = schema.getGeometryDescriptor().getType().getBinding();
+//    private Style createStyle2(FeatureSource featureSource) {
+//        SimpleFeatureType schema = (SimpleFeatureType) featureSource.getSchema();
+//        Class geomType = schema.getGeometryDescriptor().getType().getBinding();
 //
-    //    if (Polygon.class.isAssignableFrom(geomType)
-    //            || MultiPolygon.class.isAssignableFrom(geomType)) {
-    //        return createPolygonStyle();
+//        if (Polygon.class.isAssignableFrom(geomType)
+//                || MultiPolygon.class.isAssignableFrom(geomType)) {
+//            return createPolygonStyle();
 //
-    //    } else if (LineString.class.isAssignableFrom(geomType)
-    //            || MultiLineString.class.isAssignableFrom(geomType)) {
-    //        return createLineStyle();
+//        } else if (LineString.class.isAssignableFrom(geomType)
+//                || MultiLineString.class.isAssignableFrom(geomType)) {
+//            return createLineStyle();
 //
-    //    } else {
-    //        return createPointStyle();
-    //    }
-    //}
+//        } else {
+//            return createPointStyle();
+//        }
+//    }
 }
