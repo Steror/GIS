@@ -73,9 +73,9 @@ public class Map {
     /*
      * Some default style variables
      */
-    private static final Color LINE_COLOUR = Color.RED;
-    private static final Color FILL_COLOUR = Color.CYAN;
-    private static final Color SELECTED_COLOUR = Color.YELLOW;
+    private static final Color LINE_COLOUR = Color.YELLOW;
+    private static final Color FILL_COLOUR = Color.YELLOW;
+    private static final Color SELECTED_COLOUR = Color.CYAN;
     private static final float DEFAULT_OPACITY = 0.0f;
     private static final float OPACITY = 0.5f;
     private static final float LINE_WIDTH = 1.0f;
@@ -89,6 +89,11 @@ public class Map {
     public static void main(String[] args) throws Exception {
         Map me = new Map();
         me.getLayersAndDisplay();
+    }
+
+
+    private void addRasterLayer() throws Exception {
+
     }
 
     /**
@@ -206,6 +211,10 @@ public class Map {
         toolBar.addSeparator();
         toolBar.add(SelectButton);
 
+        JButton FeatureButton = new JButton("Features");
+        toolBar.addSeparator();
+        toolBar.add(FeatureButton);
+
         /*
          * When the user clicks the button we want to enable
          * our custom feature selection tool. Since the only
@@ -250,6 +259,9 @@ public class Map {
                                         }));
         // Finally display the map frame.
         // When it is closed the app will exit.
+//        frame.getMapPane().repaint();
+
+        createDefaultStyle();
         frame.setVisible(true);
     }
 
