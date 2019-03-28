@@ -80,7 +80,7 @@ public class Map {
     private static final float DEFAULT_OPACITY = 0.0f;
     private static final float OPACITY = 0.5f;
     private static final float LINE_WIDTH = 1.0f;
-    private static final float POINT_SIZE = 10.0f;
+    private static final float POINT_SIZE = 2.0f;
 
     private SimpleFeatureSource featureSource;
 
@@ -102,7 +102,6 @@ public class Map {
             return;
         }
 
-        // Initially display the raster in RGB
         AbstractGridFormat format = GridFormatFinder.findFormat(file);
         // this is a bit hacky but does make more geotiffs work
         Hints hints = new Hints();
@@ -110,7 +109,8 @@ public class Map {
             hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
         }
         reader = format.getReader(file, hints);
-
+        
+        // Initially display the raster in RGB
         Style rasterStyle = createRGBStyle();
         Layer rasterLayer = new GridReaderLayer(reader, rasterStyle);
         map.addLayer(rasterLayer);
@@ -492,7 +492,7 @@ public class Map {
             style = createSelectedStyle(IDs);
         }
 
-        Layer layer = frame.getMapContent().layers().get(1);
+        Layer layer = frame.getMapContent().layers().get(0);
         ((FeatureLayer) layer).setStyle(style);
         frame.getMapPane().repaint();
     }
