@@ -36,6 +36,7 @@ import org.geotools.styling.*;
 import org.geotools.styling.Stroke;
 import org.geotools.swing.JMapFrame;
 import org.geotools.swing.action.SafeAction;
+import org.geotools.swing.data.JFileDataStoreChooser;
 import org.geotools.swing.data.JParameterListWizard;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.CursorTool;
@@ -73,8 +74,8 @@ public class Map {
     /*
      * Some default style variables
      */
-    private static final Color LINE_COLOUR = Color.YELLOW;
-    private static final Color FILL_COLOUR = Color.YELLOW;
+    private static final Color LINE_COLOUR = Color.BLACK;
+    private static final Color FILL_COLOUR = Color.BLACK;
     private static final Color SELECTED_COLOUR = Color.CYAN;
     private static final float DEFAULT_OPACITY = 0.0f;
     private static final float OPACITY = 0.5f;
@@ -86,87 +87,59 @@ public class Map {
     private String geometryAttributeName;
     private Map.GeomType geometryType;
 
+    MapContent map = new MapContent();
+
     public static void main(String[] args) throws Exception {
-        Map me = new Map();
-        me.getLayersAndDisplay();
+        Map map = new Map();
+        map.displayLayers();
     }
 
 
     private void addRasterLayer() throws Exception {
 
-    }
-
-    /**
-     * Prompts the user for a GeoTIFF file and a Shapefile and passes them to the displayLayers
-     * method
-     */
-    private void getLayersAndDisplay() throws Exception {
-        List<Parameter<?>> list = new ArrayList<>();
-        list.add(
-                new Parameter<>(
-                        "image",
-                        File.class,
-                        "Image",
-                        "GeoTiff or World+Image to display as basemap",
-                        new KVP(Parameter.EXT, "tif", Parameter.EXT, "jpg")));
-        list.add(
-                new Parameter<>(
-                        "shape",
-                        File.class,
-                        "Shapefile",
-                        "Shapefile contents to display",
-                        new KVP(Parameter.EXT, "shp")));
-
-        JParameterListWizard wizard =
-                new JParameterListWizard("Image Lab", "Fill in the following layers", list);
-        int finish = wizard.showModalDialog();
-
-        if (finish != JWizard.FINISH) {
-            System.exit(0);
+        File file = JFileDataStoreChooser.showOpenFile("jpg", null);
+        if (file == null) {
+            return;
         }
-        File imageFile = (File) wizard.getConnectionParameters().get("image");
-        File shapeFile = (File) wizard.getConnectionParameters().get("shape");
-        displayLayers(imageFile, shapeFile);
-    }
 
-    /**
-     * Displays a GeoTIFF file overlaid with a Shapefile
-     *
-     * @param rasterFile the GeoTIFF file
-     * @param shpFile the Shapefile
-     */
-    private void displayLayers(File rasterFile, File shpFile) throws Exception {
-        AbstractGridFormat format = GridFormatFinder.findFormat(rasterFile);
+        // Initially display the raster in RGB
+        AbstractGridFormat format = GridFormatFinder.findFormat(file);
         // this is a bit hacky but does make more geotiffs work
         Hints hints = new Hints();
         if (format instanceof GeoTiffFormat) {
             hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
         }
-        reader = format.getReader(rasterFile, hints);
+        reader = format.getReader(file, hints);
 
-        // Initially display the raster in RGB
         Style rasterStyle = createRGBStyle();
+        Layer rasterLayer = new GridReaderLayer(reader, rasterStyle);
+        map.addLayer(rasterLayer);
+    }
 
-        // Connect to the shapefile
-        FileDataStore dataStore = FileDataStoreFinder.getDataStore(shpFile);
-        SimpleFeatureSource shapefileSource = dataStore.getFeatureSource();
+    private void addShapeLayer() throws Exception {
 
-        FileDataStore store = FileDataStoreFinder.getDataStore(shpFile);
+        File file = JFileDataStoreChooser.showOpenFile("shp", null);
+        if (file == null) {
+            return;
+        }
+
+        FileDataStore store = FileDataStoreFinder.getDataStore(file);
+        SimpleFeatureSource shapeFileSource = store.getFeatureSource();
+
         featureSource = store.getFeatureSource();
         setGeometry();
 
-        // Create a basic style with yellow lines and no fill
-        Style shpStyle = SLD.createPolygonStyle(Color.YELLOW, null, 0.0f);
+        // Create a default style
+        Style shpStyle = createDefaultStyle();
 
-        // Set up a MapContent with the two layers
-        final MapContent map = new MapContent();
-        map.setTitle("ImageLab");
-
-        Layer rasterLayer = new GridReaderLayer(reader, rasterStyle);
-        map.addLayer(rasterLayer);
-
-        Layer shpLayer = new FeatureLayer(shapefileSource, shpStyle);
+        Layer shpLayer = new FeatureLayer(shapeFileSource, shpStyle);
         map.addLayer(shpLayer);
+    }
+
+    /**
+     * Displays a GeoTIFF file overlaid with a Shapefile
+     */
+    private void displayLayers() throws Exception {
 
         // Create a JMapFrame with a menu to choose the display style for the
         frame = new JMapFrame(map);
@@ -178,10 +151,25 @@ public class Map {
 
         JMenuBar menuBar = new JMenuBar();
         frame.setJMenuBar(menuBar);
-        JMenu menu = new JMenu("Raster");
-        menuBar.add(menu);
 
-        menu.add(
+        JMenu layerMenu = new JMenu("Layer");
+        menuBar.add(layerMenu);
+        layerMenu.add(
+                new SafeAction("Add shape file") {
+                    public void action(ActionEvent e) throws Throwable {
+                        addShapeLayer();
+                    }
+                });
+        layerMenu.add(
+                new SafeAction("Add raster file") {
+                    public void action(ActionEvent e) throws Throwable {
+                        addRasterLayer();
+                    }
+                });
+
+        JMenu rasterMenu = new JMenu("Raster");
+        menuBar.add(rasterMenu);
+        rasterMenu.add(
                 new SafeAction("Grayscale display") {
                     public void action(ActionEvent e) throws Throwable {
                         Style style = createGreyscaleStyle();
@@ -191,8 +179,7 @@ public class Map {
                         }
                     }
                 });
-
-        menu.add(
+        rasterMenu.add(
                 new SafeAction("RGB display") {
                     public void action(ActionEvent e) throws Throwable {
                         Style style = createRGBStyle();
@@ -261,7 +248,6 @@ public class Map {
         // When it is closed the app will exit.
 //        frame.getMapPane().repaint();
 
-        createDefaultStyle();
         frame.setVisible(true);
     }
 
