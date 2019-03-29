@@ -55,7 +55,7 @@ import org.opengis.style.ContrastMethod;
 @SuppressWarnings("Duplicates")
 public class Map {
 
-    private static Point startScreenPos;
+    private static Point startScreenPos, endScreenPos;
     private StyleFactory sf = CommonFactoryFinder.getStyleFactory();
     private FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
 
@@ -90,8 +90,8 @@ public class Map {
     MapContent map = new MapContent();
 
     public static void main(String[] args) throws Exception {
-        Map map = new Map();
-        map.displayLayers();
+        Map myMap = new Map();
+        myMap.displayLayers();
     }
 
 
@@ -109,7 +109,7 @@ public class Map {
             hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
         }
         reader = format.getReader(file, hints);
-        
+
         // Initially display the raster in RGB
         Style rasterStyle = createRGBStyle();
         Layer rasterLayer = new GridReaderLayer(reader, rasterStyle);
@@ -134,6 +134,8 @@ public class Map {
 
         Layer shpLayer = new FeatureLayer(shapeFileSource, shpStyle);
         map.addLayer(shpLayer);
+        Set<FeatureId> IDs = new HashSet<>();
+        displaySelectedFeatures(IDs);
     }
 
     /**
@@ -220,34 +222,20 @@ public class Map {
                                             public void onMouseClicked(MapMouseEvent ev) {
                                                 selectFeatures(ev);
                                             }
-                                        }));
-        SelectButton.addActionListener(
-                e ->
-                        frame.getMapPane()
-                                .setCursorTool(
-                                        new CursorTool() {
-
                                             @Override
                                             public void onMousePressed(MapMouseEvent ev) {
                                                 System.out.println("Mouse press at: " + ev.getMapPosition());
                                                 startScreenPos = ev.getPoint();
                                             }
-                                        }));
-        SelectButton.addActionListener(
-                e ->
-                        frame.getMapPane()
-                                .setCursorTool(
-                                        new CursorTool() {
-
                                             @Override
                                             public void onMouseReleased(MapMouseEvent ev) {
-                                                selectBoxFeatures(startScreenPos, ev);
+                                                selectBoxFeatures(ev);
                                             }
                                         }));
+
         // Finally display the map frame.
         // When it is closed the app will exit.
-//        frame.getMapPane().repaint();
-
+        frame.getMapPane().repaint();
         frame.setVisible(true);
     }
 
@@ -427,12 +415,26 @@ public class Map {
     /**
      *MousePressed and MouseReleased select
      */
-    void selectBoxFeatures(Point startScreenPos, MapMouseEvent ev)
+    void selectBoxFeatures(MapMouseEvent ev)
     {
         System.out.println("Mouse release at: " + ev.getMapPosition());
+        int x1, x2, y1, y2;
 
-        Point endScreenPos = ev.getPoint();
-        Rectangle screenRect = new Rectangle(endScreenPos.x - startScreenPos.x, endScreenPos.y - startScreenPos.x);
+        endScreenPos = ev.getPoint();
+
+        if(endScreenPos.x > startScreenPos.x){
+            x1 = startScreenPos.x;
+            x2 = endScreenPos.x;}
+        else{
+            x1 = endScreenPos.x;
+            x2 = startScreenPos.x;}
+        if(endScreenPos.y > startScreenPos.y){
+            y1 = endScreenPos.y;
+            y2 = startScreenPos.y;}
+        else{
+            y1 = startScreenPos.y;
+            y2 = endScreenPos.y;}
+        Rectangle screenRect = new Rectangle(x1, y2, x2 - x1, y1 - y2);
         /*
          * Transform the screen rectangle into bounding box in the coordinate
          * reference system of our map context. Note: we are using a naive method
@@ -539,6 +541,7 @@ public class Map {
         Fill fill = null;
         Stroke stroke = sf.createStroke(ff.literal(outlineColor), ff.literal(LINE_WIDTH));
 
+        //setGeometry();
         switch (geometryType) {
             case POLYGON:
                 fill = sf.createFill(ff.literal(fillColor), ff.literal(fillOpacity));
