@@ -23,7 +23,7 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.factory.Hints;
+//import org.geotools.factory.Hints;
 import org.geotools.gce.geotiff.GeoTiffFormat;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
@@ -107,12 +107,12 @@ public class Map {
         }
 
         AbstractGridFormat format = GridFormatFinder.findFormat(file);
-        // this is a bit hacky but does make more geotiffs work
-        Hints hints = new Hints();
-        if (format instanceof GeoTiffFormat) {
-            hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
-        }
-        reader = format.getReader(file, hints);
+//        // this is a bit hacky but does make more geotiffs work
+//        Hints hints = new Hints();
+//        if (format instanceof GeoTiffFormat) {
+//            hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
+//        }
+        reader = format.getReader(file);
 
         // Initially display the raster in RGB
         Style rasterStyle = createRGBStyle();
@@ -228,7 +228,7 @@ public class Map {
                                             }
                                             @Override
                                             public void onMousePressed(MapMouseEvent ev) {
-                                                System.out.println("Mouse press at: " + ev.getMapPosition());
+                                                System.out.println("Mouse press at: " + ev.getWorldPos());
                                                 startScreenPos = ev.getPoint();
                                             }
                                             @Override
@@ -375,7 +375,7 @@ public class Map {
      */
     void selectFeatures(MapMouseEvent ev) {
 
-        System.out.println("Mouse click at: " + ev.getMapPosition());
+        System.out.println("Mouse click at: " + ev.getWorldPos());
 
         /*
          * Construct a 5x5 pixel rectangle centred on the mouse click position
@@ -432,7 +432,7 @@ public class Map {
      */
     void selectBoxFeatures(MapMouseEvent ev)
     {
-        System.out.println("Mouse release at: " + ev.getMapPosition());
+        System.out.println("Mouse release at: " + ev.getWorldPos());
         int x1, x2, y1, y2;
 
         endScreenPos = ev.getPoint();

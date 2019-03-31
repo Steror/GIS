@@ -44,11 +44,13 @@
       <artifactId>gt-epsg-hsql</artifactId>
       <version>${geotools.version}</version>
     </dependency>
+    <!-- Provides image components judging by .tiff -->
     <dependency>
       <groupId>org.geotools</groupId>
       <artifactId>gt-geotiff</artifactId>
       <version>${geotools.version}</version>
     </dependency>
+    <!-- Provides image components-->
     <dependency>
       <groupId>org.geotools</groupId>
       <artifactId>gt-image</artifactId>
