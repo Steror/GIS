@@ -6,7 +6,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,12 +34,15 @@ import org.geotools.map.StyleLayer;
 import org.geotools.styling.*;
 import org.geotools.styling.Stroke;
 import org.geotools.swing.JMapFrame;
+import org.geotools.swing.action.ResetAction;
 import org.geotools.swing.action.SafeAction;
 import org.geotools.swing.data.JFileDataStoreChooser;
 import org.geotools.swing.data.JParameterListWizard;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.CursorTool;
 import org.geotools.swing.wizard.JWizard;
+import org.geotools.tutorial.filter.QueryLab;
+import org.geotools.tutorial.filter.QueryLabModified;
 import org.geotools.util.KVP;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
@@ -56,6 +58,7 @@ import org.opengis.style.ContrastMethod;
 public class Map {
 
     private static Point startScreenPos, endScreenPos;
+    private ReferencedEnvelope selectedArea;
     private StyleFactory sf = CommonFactoryFinder.getStyleFactory();
     private FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
 
@@ -87,6 +90,7 @@ public class Map {
     private String geometryAttributeName;
     private Map.GeomType geometryType;
 
+    JFrame query;
     MapContent map = new MapContent();
 
     public static void main(String[] args) throws Exception {
@@ -232,6 +236,17 @@ public class Map {
                                                 selectBoxFeatures(ev);
                                             }
                                         }));
+        FeatureButton.addActionListener(e -> {
+            // display the query frame when the button is pressed
+            if(query == null) {
+                query = new QueryLabModified();
+                query.setVisible(true);
+            }
+            else
+                query.setVisible(true);
+        });
+        //JButton ResetButton = new JButton(new ResetAction(frame.getMapPane()));
+        //ResetButton.setName("ToolbarResetButton");
 
         // Finally display the map frame.
         // When it is closed the app will exit.
@@ -493,7 +508,14 @@ public class Map {
         } else {
             style = createSelectedStyle(IDs);
         }
-
+//        List<Layer> layers = frame.getMapContent().layers();
+//        while (!layers.isEmpty())
+//        {
+//            Layer layer = layers.get(layers.lastIndexOf(layers));
+//            ((FeatureLayer) layer).setStyle(style);
+//            frame.getMapPane().repaint();
+//            layers.remove(layer);
+//        }
         Layer layer = frame.getMapContent().layers().get(0);
         ((FeatureLayer) layer).setStyle(style);
         frame.getMapPane().repaint();
