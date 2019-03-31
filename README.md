@@ -1,7 +1,7 @@
 # GIS Application 2019
 Based on GeoTools version 20-SNAPSHOT
 ---
-Completed Requirements ✔ :
+# Completed Requirements ✔ :
 <ol>
   <li>Add/remove layer, show/hide layer ✔</li>
   <li>Zoom in/out ✔</li>
@@ -10,23 +10,23 @@ Completed Requirements ✔ :
   <li>Select features, multiselect ✔</li>
 </ol>
 
-#
-Incomplete Requirements ✔/❌ :
+
+# Incomplete Requirements ✔/❌ :
 <ol>
   <li>Select data by attributes and show the objects on the map ✔/❌</li>
   <li>Select by location ✔/❌</li>
 </ol>
 
-#
-Missing Requirements ❌ :
+
+# Missing Requirements ❌ :
 <ol>
   <li>Zoom to select ❌</li>
   <li>Show data for selected objects, show objects for selected data ❌</li>
   <li>Save selected objects to a new layer ❌</li>
 </ol>
 
-#
-Full Requirements:
+
+# Full Requirements:
 1. Add/remove layer, show/hide layer ✔
 2. Zoom in/out ✔
 3. Pan ✔
@@ -38,7 +38,6 @@ Full Requirements:
 9. Select data by attributes and show the objects on the map ✔/❌
 10. Select by location ✔/❌
 11. Save selected objects to a new layer ❌
-#
 # Bugs
 <ul>
   <li>Adding more than one layer causes shape geometry to change</li>
