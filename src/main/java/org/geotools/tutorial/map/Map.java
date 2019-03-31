@@ -7,7 +7,6 @@ import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import javax.swing.*;
 
@@ -18,13 +17,11 @@ import org.geotools.coverage.grid.io.GridCoverage2DReader;
 import org.geotools.coverage.grid.io.GridFormatFinder;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
-import org.geotools.data.Parameter;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
 //import org.geotools.factory.Hints;
-import org.geotools.gce.geotiff.GeoTiffFormat;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.GridReaderLayer;
@@ -34,16 +31,12 @@ import org.geotools.map.StyleLayer;
 import org.geotools.styling.*;
 import org.geotools.styling.Stroke;
 import org.geotools.swing.JMapFrame;
-import org.geotools.swing.action.ResetAction;
+//import org.geotools.swing.action.ResetAction;
 import org.geotools.swing.action.SafeAction;
 import org.geotools.swing.data.JFileDataStoreChooser;
-import org.geotools.swing.data.JParameterListWizard;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.CursorTool;
-import org.geotools.swing.wizard.JWizard;
-import org.geotools.tutorial.filter.QueryLab;
 import org.geotools.tutorial.filter.QueryLabModified;
-import org.geotools.util.KVP;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPolygon;
@@ -90,8 +83,9 @@ public class Map {
     private String geometryAttributeName;
     private Map.GeomType geometryType;
 
-    JFrame query;
+    QueryLabModified queryLab;
     MapContent map = new MapContent();
+    FileDataStore store;
 
     public static void main(String[] args) throws Exception {
         Map myMap = new Map();
@@ -99,55 +93,13 @@ public class Map {
     }
 
 
-    private void addRasterLayer() throws Exception {
-
-        File file = JFileDataStoreChooser.showOpenFile("jpg", null);
-        if (file == null) {
-            return;
-        }
-
-        AbstractGridFormat format = GridFormatFinder.findFormat(file);
-//        // this is a bit hacky but does make more geotiffs work
-//        Hints hints = new Hints();
-//        if (format instanceof GeoTiffFormat) {
-//            hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
-//        }
-        reader = format.getReader(file);
-
-        // Initially display the raster in RGB
-        Style rasterStyle = createRGBStyle();
-        Layer rasterLayer = new GridReaderLayer(reader, rasterStyle);
-        map.addLayer(rasterLayer);
-    }
-
-    private void addShapeLayer() throws Exception {
-
-        File file = JFileDataStoreChooser.showOpenFile("shp", null);
-        if (file == null) {
-            return;
-        }
-
-        FileDataStore store = FileDataStoreFinder.getDataStore(file);
-        SimpleFeatureSource shapeFileSource = store.getFeatureSource();
-
-        featureSource = store.getFeatureSource();
-        setGeometry();
-
-        // Create a default style
-        Style shpStyle = createDefaultStyle();
-
-        Layer shpLayer = new FeatureLayer(shapeFileSource, shpStyle);
-        map.addLayer(shpLayer);
-        Set<FeatureId> IDs = new HashSet<>();
-        displaySelectedFeatures(IDs);
-    }
-
     /**
      * Displays a GeoTIFF file overlaid with a Shapefile
      */
     private void displayLayers() throws Exception {
 
         // Create a JMapFrame with a menu to choose the display style for the
+        map.setTitle("GIS Application");
         frame = new JMapFrame(map);
         frame.enableLayerTable(true);
         frame.setSize(800, 600);
@@ -204,9 +156,9 @@ public class Map {
         toolBar.addSeparator();
         toolBar.add(SelectButton);
 
-        JButton FeatureButton = new JButton("Features");
+        JButton QueryButton = new JButton("Query");
         toolBar.addSeparator();
-        toolBar.add(FeatureButton);
+        toolBar.add(QueryButton);
 
         /*
          * When the user clicks the button we want to enable
@@ -236,14 +188,14 @@ public class Map {
                                                 selectBoxFeatures(ev);
                                             }
                                         }));
-        FeatureButton.addActionListener(e -> {
-            // display the query frame when the button is pressed
-            if(query == null) {
-                query = new QueryLabModified();
-                query.setVisible(true);
-            }
-            else
-                query.setVisible(true);
+        queryLab = new QueryLabModified();
+        queryLab.setTitle("Query");
+        QueryButton.addActionListener(e -> {
+        // display the query frame when the button is pressed
+            if(store != null)
+            initQueryLabModified();
+            queryLab.setVisible(true);
+
         });
         //JButton ResetButton = new JButton(new ResetAction(frame.getMapPane()));
         //ResetButton.setName("ToolbarResetButton");
@@ -252,6 +204,49 @@ public class Map {
         // When it is closed the app will exit.
         frame.getMapPane().repaint();
         frame.setVisible(true);
+    }
+
+    private void addRasterLayer() throws Exception {
+
+        File file = JFileDataStoreChooser.showOpenFile("jpg", null);
+        if (file == null) {
+            return;
+        }
+
+        AbstractGridFormat format = GridFormatFinder.findFormat(file);
+//        // this is a bit hacky but does make more geotiffs work
+//        Hints hints = new Hints();
+//        if (format instanceof GeoTiffFormat) {
+//            hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
+//        }
+        reader = format.getReader(file); //add second parameter hints for top code
+
+        // Initially display the raster in RGB
+        Style rasterStyle = createRGBStyle();
+        Layer rasterLayer = new GridReaderLayer(reader, rasterStyle);
+        map.addLayer(rasterLayer);
+    }
+
+    private void addShapeLayer() throws Exception {
+
+        File file = JFileDataStoreChooser.showOpenFile("shp", null);
+        if (file == null) {
+            return;
+        }
+
+        store = FileDataStoreFinder.getDataStore(file);
+        SimpleFeatureSource shapeFileSource = store.getFeatureSource();
+
+        featureSource = store.getFeatureSource();
+        setGeometry();
+
+        // Create a default style
+        Style shpStyle = createDefaultStyle();
+
+        Layer shpLayer = new FeatureLayer(shapeFileSource, shpStyle);
+        map.addLayer(shpLayer);
+        Set<FeatureId> IDs = new HashSet<>();
+        displaySelectedFeatures(IDs);
     }
 
     /**
@@ -405,6 +400,9 @@ public class Map {
          */
         try {
             SimpleFeatureCollection selectedFeatures = featureSource.getFeatures(filter);
+            initQueryLabModified();
+            queryLab.filterSelectedFeatures(selectedFeatures);
+            queryLab.setVisible(true);
 
             Set<FeatureId> IDs = new HashSet<>();
             try (SimpleFeatureIterator iter = selectedFeatures.features()) {
@@ -472,6 +470,9 @@ public class Map {
          */
         try {
             SimpleFeatureCollection selectedFeatures = featureSource.getFeatures(filter);
+            initQueryLabModified();
+            queryLab.filterSelectedFeatures(selectedFeatures);
+            queryLab.setVisible(true);
 
             Set<FeatureId> IDs = new HashSet<>();
             try (SimpleFeatureIterator iter = selectedFeatures.features()) {
@@ -613,6 +614,14 @@ public class Map {
 
         } else {
             geometryType = Map.GeomType.POINT;
+        }
+    }
+    private void initQueryLabModified(){
+        queryLab.setDataStore(store);
+        try {
+            queryLab.updateUI();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

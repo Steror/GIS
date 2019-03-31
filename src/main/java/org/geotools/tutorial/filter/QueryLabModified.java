@@ -31,13 +31,15 @@ import java.util.Map;
  */
 @SuppressWarnings("serial")
 public class QueryLabModified extends JFrame {
-    private DataStore dataStore;
+    public DataStore dataStore;
     private JComboBox<String> featureTypeCBox;
-    private JTable table;
+    public JTable table;
     private JTextField text;
+    public SimpleFeatureCollection selectedFeatures;
 
     public static void main(String[] args) throws Exception {
         JFrame frame = new QueryLabModified();
+        frame.setTitle("Query");
         frame.setVisible(true);
     }
 
@@ -128,20 +130,26 @@ public class QueryLabModified extends JFrame {
         }
     }
 
-    private void updateUI() throws Exception {
+    public void updateUI() throws Exception {
         ComboBoxModel<String> cbm = new DefaultComboBoxModel<>(dataStore.getTypeNames());
         featureTypeCBox.setModel(cbm);
 
         table.setModel(new DefaultTableModel(5, 5));
     }
 
-    private void filterFeatures() throws Exception {
+    public void filterFeatures() throws Exception {
         String typeName = (String) featureTypeCBox.getSelectedItem();
         SimpleFeatureSource source = dataStore.getFeatureSource(typeName);
 
         Filter filter = CQL.toFilter(text.getText());
-        SimpleFeatureCollection features = source.getFeatures(filter);
-        FeatureCollectionTableModel model = new FeatureCollectionTableModel(features);
+        selectedFeatures = source.getFeatures(filter);
+        FeatureCollectionTableModel model = new FeatureCollectionTableModel(selectedFeatures);
+        table.setModel(model);
+    }
+
+    public void filterSelectedFeatures(SimpleFeatureCollection selectedFeatures) throws Exception {
+        this.selectedFeatures = selectedFeatures;
+        FeatureCollectionTableModel model = new FeatureCollectionTableModel(selectedFeatures);
         table.setModel(model);
     }
 
@@ -152,8 +160,12 @@ public class QueryLabModified extends JFrame {
         Filter filter = CQL.toFilter(text.getText());
         SimpleFeatureCollection features = source.getFeatures(filter);
 
+        int countFiltered = selectedFeatures.size();
         int count = features.size();
-        JOptionPane.showMessageDialog(text, "Number of selected features:" + count);
+        if(selectedFeatures != null)
+            JOptionPane.showMessageDialog(text, "Number of selected features: " + countFiltered + " / " + count);
+        else
+            JOptionPane.showMessageDialog(text, "Number of selected features: " + count);
     }
 
     private void queryFeatures() throws Exception {
@@ -167,9 +179,19 @@ public class QueryLabModified extends JFrame {
 
         Query query = new Query(typeName, filter, new String[]{name});
 
-        SimpleFeatureCollection features = source.getFeatures(query);
+//        if(selectedFeatures != null)
+//        {
+//            FeatureCollectionTableModel model = new FeatureCollectionTableModel(selectedFeatures);
+//            table.setModel(model);
+//        }
+        selectedFeatures = source.getFeatures(query);
+        
 
-        FeatureCollectionTableModel model = new FeatureCollectionTableModel(features);
+        FeatureCollectionTableModel model = new FeatureCollectionTableModel(selectedFeatures);
         table.setModel(model);
+    }
+
+    public void setDataStore(DataStore dataStore) {
+        this.dataStore = dataStore;
     }
 }
