@@ -1,4 +1,4 @@
-
-.idea/
-GIS-Application.iml
+*.iml
 .idea/workspace.xml
+.idea/libraries
+*.class
