@@ -87,6 +87,7 @@ public class GISMap {
     QueryLabModified queryLab;
     MapContent map = new MapContent();
     FileDataStore store;
+    public SimpleFeatureCollection selectedFeatures;
 
     public static void main(String[] args) throws Exception {
         GISMap myMap = new GISMap();
@@ -200,6 +201,12 @@ public class GISMap {
             queryLab.setVisible(true);
 
         });
+        JButton ZoomSelectedButton = new JButton("Zoom to selected");
+        toolBar.addSeparator();
+        toolBar.add(ZoomSelectedButton);
+        ZoomSelectedButton.addActionListener(
+                e -> { zoomToSelected(); });
+
         //JButton ResetButton = new JButton(new ResetAction(frame.getMapPane()));
         //ResetButton.setName("ToolbarResetButton");
 
@@ -402,7 +409,7 @@ public class GISMap {
          * Use the filter to identify the selected features
          */
         try {
-            SimpleFeatureCollection selectedFeatures = featureSource.getFeatures(filter);
+            selectedFeatures = featureSource.getFeatures(filter);
             initQueryLabModified();
             queryLab.filterSelectedFeatures(selectedFeatures);
             queryLab.setVisible(true);
@@ -472,7 +479,7 @@ public class GISMap {
          * Use the filter to identify the selected features
          */
         try {
-            SimpleFeatureCollection selectedFeatures = featureSource.getFeatures(filter);
+            selectedFeatures = featureSource.getFeatures(filter);
             initQueryLabModified();
             queryLab.filterSelectedFeatures(selectedFeatures);
             queryLab.setVisible(true);
@@ -630,7 +637,7 @@ public class GISMap {
 
     public void showMap()
     {
-        SimpleFeatureCollection selectedFeatures = queryLab.getSelectedFeatures();
+        selectedFeatures = queryLab.getSelectedFeatures();
         Set<FeatureId> IDs = new HashSet<>();
         try (SimpleFeatureIterator iter = selectedFeatures.features()) {
             while (iter.hasNext()) {
@@ -639,5 +646,11 @@ public class GISMap {
             }
         }
         displaySelectedFeatures(IDs);
+    }
+
+    public void zoomToSelected()
+    {
+        ReferencedEnvelope referencedEnvelope = selectedFeatures.getBounds();
+        frame.getMapPane().setDisplayArea(referencedEnvelope);
     }
 }

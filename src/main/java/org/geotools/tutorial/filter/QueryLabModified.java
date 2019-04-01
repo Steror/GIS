@@ -45,7 +45,6 @@ public class QueryLabModified extends JFrame{
     public JTable table;
     private JTextField text;
     public SimpleFeatureCollection selectedFeatures;
-    public GISMap map;
 
     public static void main(String[] args) throws Exception {
         JFrame frame = new QueryLabModified();
