@@ -8,13 +8,13 @@ Based on GeoTools version 20-SNAPSHOT
   <li>Pan ✔</li>
   <li>Full extent ✔</li>
   <li>Select features, multiselect ✔</li>
+  <li>Show data for selected objects, show objects for selected data ✔</li>
   <li>Show data table for selected layer ✔</li>
 </ol>
 
 
 # Incomplete Requirements ✔/❌ :
 <ol>
-  <li>Show data for selected objects, show objects for selected data ✔/❌</li>
   <li>Select data by attributes and show the objects on the map ✔/❌</li>
   <li>Select by location ✔/❌</li>
 </ol>
@@ -35,7 +35,7 @@ Based on GeoTools version 20-SNAPSHOT
   <li>Full extent ✔</li>
   <li>Select features, multiselect ✔</li>
   <li>Zoom to select ❌</li>
-  <li>Show data for selected objects, show objects for selected data ✔/❌</li>
+  <li>Show data for selected objects, show objects for selected data ✔</li>
   <li>Show data table for selected layer ✔</li>
   <li>Select data by attributes and show the objects on the map ✔/❌</li>
   <li>Select by location ✔/❌</li>
