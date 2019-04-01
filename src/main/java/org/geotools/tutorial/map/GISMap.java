@@ -2,6 +2,7 @@ package org.geotools.tutorial.map;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
@@ -48,7 +49,7 @@ import org.opengis.filter.identity.FeatureId;
 import org.opengis.style.ContrastMethod;
 
 @SuppressWarnings("Duplicates")
-public class Map {
+public class GISMap {
 
     private static Point startScreenPos, endScreenPos;
     private ReferencedEnvelope selectedArea;
@@ -81,14 +82,14 @@ public class Map {
     private SimpleFeatureSource featureSource;
 
     private String geometryAttributeName;
-    private Map.GeomType geometryType;
+    private GISMap.GeomType geometryType;
 
     QueryLabModified queryLab;
     MapContent map = new MapContent();
     FileDataStore store;
 
     public static void main(String[] args) throws Exception {
-        Map myMap = new Map();
+        GISMap myMap = new GISMap();
         myMap.displayLayers();
     }
 
@@ -190,6 +191,8 @@ public class Map {
                                         }));
         queryLab = new QueryLabModified();
         queryLab.setTitle("Query");
+        queryLab.ShowMap.addActionListener(
+                e -> { showMap(); });
         QueryButton.addActionListener(e -> {
         // display the query frame when the button is pressed
             if(store != null)
@@ -605,15 +608,15 @@ public class Map {
         Class<?> clazz = geomDesc.getType().getBinding();
 
         if (org.locationtech.jts.geom.Polygon.class.isAssignableFrom(clazz) || MultiPolygon.class.isAssignableFrom(clazz)) {
-            geometryType = Map.GeomType.POLYGON;
+            geometryType = GISMap.GeomType.POLYGON;
 
         } else if (LineString.class.isAssignableFrom(clazz)
                 || MultiLineString.class.isAssignableFrom(clazz)) {
 
-            geometryType = Map.GeomType.LINE;
+            geometryType = GISMap.GeomType.LINE;
 
         } else {
-            geometryType = Map.GeomType.POINT;
+            geometryType = GISMap.GeomType.POINT;
         }
     }
     private void initQueryLabModified(){
@@ -623,5 +626,18 @@ public class Map {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void showMap()
+    {
+        SimpleFeatureCollection selectedFeatures = queryLab.getSelectedFeatures();
+        Set<FeatureId> IDs = new HashSet<>();
+        try (SimpleFeatureIterator iter = selectedFeatures.features()) {
+            while (iter.hasNext()) {
+                SimpleFeature feature = iter.next();
+                IDs.add(feature.getIdentifier());
+            }
+        }
+        displaySelectedFeatures(IDs);
     }
 }

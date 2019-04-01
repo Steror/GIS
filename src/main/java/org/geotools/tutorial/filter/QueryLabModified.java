@@ -7,12 +7,14 @@ import org.geotools.data.Query;
 import org.geotools.data.postgis.PostgisNGDataStoreFactory;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.filter.text.cql2.CQL;
 import org.geotools.swing.action.SafeAction;
 import org.geotools.swing.data.JDataStoreWizard;
 import org.geotools.swing.table.FeatureCollectionTableModel;
 import org.geotools.swing.wizard.JWizard;
+import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.filter.Filter;
 
@@ -20,7 +22,13 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+
+import org.geotools.tutorial.map.GISMap;
+import org.opengis.filter.identity.FeatureId;
 
 /**
  * The Query Lab is an excuse to try out Filters and Expressions on your own data with a table to
@@ -30,12 +38,14 @@ import java.util.Map;
  * make a Filter using CommonFactoryFinder.getFilterFactory2().
  */
 @SuppressWarnings("serial")
-public class QueryLabModified extends JFrame {
+public class QueryLabModified extends JFrame{
     public DataStore dataStore;
+    public AbstractButton ShowMap;
     private JComboBox<String> featureTypeCBox;
     public JTable table;
     private JTextField text;
     public SimpleFeatureCollection selectedFeatures;
+    public GISMap map;
 
     public static void main(String[] args) throws Exception {
         JFrame frame = new QueryLabModified();
@@ -69,6 +79,8 @@ public class QueryLabModified extends JFrame {
         menubar.add(featureTypeCBox);
 
         JMenu dataMenu = new JMenu("Data");
+        menubar.add(dataMenu);
+
         menubar.add(dataMenu);
         pack();
         fileMenu.add(
@@ -115,6 +127,8 @@ public class QueryLabModified extends JFrame {
                         queryFeatures();
                     }
                 });
+        ShowMap = new JButton("Show on map");
+        dataMenu.add(ShowMap);
     }
 
     private void connect(DataStoreFactorySpi format) throws Exception {
@@ -179,19 +193,19 @@ public class QueryLabModified extends JFrame {
 
         Query query = new Query(typeName, filter, new String[]{name});
 
-//        if(selectedFeatures != null)
-//        {
-//            FeatureCollectionTableModel model = new FeatureCollectionTableModel(selectedFeatures);
-//            table.setModel(model);
-//        }
         selectedFeatures = source.getFeatures(query);
-        
 
         FeatureCollectionTableModel model = new FeatureCollectionTableModel(selectedFeatures);
         table.setModel(model);
+
     }
 
     public void setDataStore(DataStore dataStore) {
         this.dataStore = dataStore;
+    }
+
+    public SimpleFeatureCollection getSelectedFeatures()
+    {
+        return this.selectedFeatures;
     }
 }
