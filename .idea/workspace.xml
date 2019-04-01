@@ -32,11 +32,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/map/GISMap.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="362">
-              <caret line="190" column="44" lean-forward="true" selection-start-line="190" selection-start-column="44" selection-end-line="190" selection-end-column="44" />
+            <state relative-caret-position="129">
+              <caret line="232" column="21" selection-start-line="232" selection-start-column="17" selection-end-line="232" selection-end-column="21" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -93,10 +93,10 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/filter/QueryLabModified.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="767">
+            <state relative-caret-position="452">
               <caret line="128" column="19" selection-start-line="128" selection-start-column="19" selection-end-line="128" selection-end-column="19" />
               <folding>
                 <element signature="imports" expanded="true" />
@@ -413,12 +413,12 @@
       <workItem from="1553862644773" duration="23975000" />
       <workItem from="1553958231432" duration="5276000" />
       <workItem from="1554023293414" duration="28326000" />
-      <workItem from="1554103931263" duration="7327000" />
+      <workItem from="1554103931263" duration="9182000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="132587000" />
+    <option name="totallyTimeSpent" value="134442000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -881,24 +881,24 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/map/GISMap.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="362">
-          <caret line="190" column="44" lean-forward="true" selection-start-line="190" selection-start-column="44" selection-end-line="190" selection-end-column="44" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/filter/QueryLabModified.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="767">
+        <state relative-caret-position="452">
           <caret line="128" column="19" selection-start-line="128" selection-start-column="19" selection-end-line="128" selection-end-column="19" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#8082#8083#0" expanded="true" />
             <element signature="e#8125#8126#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/geotools/tutorial/map/GISMap.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="129">
+          <caret line="232" column="21" selection-start-line="232" selection-start-column="17" selection-end-line="232" selection-end-column="21" />
+          <folding>
+            <element signature="imports" expanded="true" />
           </folding>
         </state>
       </provider>
