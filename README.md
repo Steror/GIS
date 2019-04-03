@@ -7,22 +7,22 @@ Based on GeoTools version 20-SNAPSHOT
   <li>Zoom in/out ✔</li>
   <li>Pan ✔</li>
   <li>Full extent ✔</li>
-  <li>Select features, multiselect ✔</li>
+  <li>Zoom to select ✔</li>
   <li>Show data for selected objects, show objects for selected data ✔</li>
   <li>Show data table for selected layer ✔</li>
+  <li>Select data by attributes and show the objects on the map ✔</li>
+  <li>Select by location ✔</li>
 </ol>
 
 
 # Incomplete Requirements ✔/❌ :
 <ol>
-  <li>Select data by attributes and show the objects on the map ✔/❌</li>
-  <li>Select by location ✔/❌</li>
+    <li>Select features, multiselect ✔/❌</li>
 </ol>
 
 
 # Missing Requirements ❌ :
 <ol>
-  <li>Zoom to select ❌</li>
   <li>Save selected objects to a new layer ❌</li>
 </ol>
 
@@ -33,12 +33,12 @@ Based on GeoTools version 20-SNAPSHOT
   <li>Zoom in/out ✔</li>
   <li>Pan ✔</li>
   <li>Full extent ✔</li>
-  <li>Select features, multiselect ✔</li>
-  <li>Zoom to select ❌</li>
+  <li>Select features, multiselect ✔/❌</li>
+  <li>Zoom to select ✔</li>
   <li>Show data for selected objects, show objects for selected data ✔</li>
   <li>Show data table for selected layer ✔</li>
-  <li>Select data by attributes and show the objects on the map ✔/❌</li>
-  <li>Select by location ✔/❌</li>
+  <li>Select data by attributes and show the objects on the map ✔</li>
+  <li>Select by location ✔</li>
   <li>Save selected objects to a new layer ❌</li>
 </ol>
 
