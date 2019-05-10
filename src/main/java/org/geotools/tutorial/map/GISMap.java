@@ -16,6 +16,7 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.GridCoverage2DReader;
 import org.geotools.coverage.grid.io.GridFormatFinder;
+import org.geotools.data.FeatureSource;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -52,7 +53,6 @@ import org.opengis.style.ContrastMethod;
 public class GISMap {
 
     private static Point startScreenPos, endScreenPos;
-    private ReferencedEnvelope selectedArea;
     private StyleFactory sf = CommonFactoryFinder.getStyleFactory();
     private FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
 
@@ -176,10 +176,10 @@ public class GISMap {
                                 .setCursorTool(
                                         new CursorTool() {
 
-                                            @Override
+                                            /*@Override
                                             public void onMouseClicked(MapMouseEvent ev) {
                                                 selectFeatures(ev);
-                                            }
+                                            }*/
                                             @Override
                                             public void onMousePressed(MapMouseEvent ev) {
                                                 System.out.println("Mouse press at: " + ev.getWorldPos());
@@ -206,6 +206,12 @@ public class GISMap {
         toolBar.add(ZoomSelectedButton);
         ZoomSelectedButton.addActionListener(
                 e -> { zoomToSelected(); });
+
+        JButton IntersectSelectedButton = new JButton("Intersect");
+        toolBar.addSeparator();
+        toolBar.add(IntersectSelectedButton);
+        IntersectSelectedButton.addActionListener(
+                e -> { intersectSelected(); });
 
         //JButton ResetButton = new JButton(new ResetAction(frame.getMapPane()));
         //ResetButton.setName("ToolbarResetButton");
@@ -235,6 +241,7 @@ public class GISMap {
         Style rasterStyle = createRGBStyle();
         Layer rasterLayer = new GridReaderLayer(reader, rasterStyle);
         map.addLayer(rasterLayer);
+        frame.getMapPane().repaint();
     }
 
     private void addShapeLayer() throws Exception {
@@ -255,8 +262,8 @@ public class GISMap {
 
         Layer shpLayer = new FeatureLayer(shapeFileSource, shpStyle);
         map.addLayer(shpLayer);
-        Set<FeatureId> IDs = new HashSet<>();
-        displaySelectedFeatures(IDs);
+        frame.getMapPane().repaint();
+        //initQueryLabModified();
     }
 
     /**
@@ -265,7 +272,7 @@ public class GISMap {
      * @return a new Style instance to render the image in greyscale
      */
     private Style createGreyscaleStyle() {
-        GridCoverage2D cov = null;
+        GridCoverage2D cov;
         try {
             cov = reader.read(null);
         } catch (IOException giveUp) {
@@ -321,7 +328,7 @@ public class GISMap {
      * @return a new Style object containing a raster symbolizer set up for RGB image
      */
     private Style createRGBStyle() {
-        GridCoverage2D cov = null;
+        GridCoverage2D cov;
         try {
             cov = reader.read(null);
         } catch (IOException giveUp) {
@@ -373,67 +380,6 @@ public class GISMap {
 
         return SLD.wrapSymbolizers(sym);
     }
-    /**
-     * This method is called by our feature selection tool when the user has clicked on the map.
-     *
-     * @param ev the mouse event being handled
-     */
-    void selectFeatures(MapMouseEvent ev) {
-
-        System.out.println("Mouse click at: " + ev.getWorldPos());
-
-        /*
-         * Construct a 5x5 pixel rectangle centred on the mouse click position
-         */
-        Point screenPos = ev.getPoint();
-        Rectangle screenRect = new Rectangle(screenPos.x - 2, screenPos.y - 2, 5, 5);
-
-        /*
-         * Transform the screen rectangle into bounding box in the coordinate
-         * reference system of our map context. Note: we are using a naive method
-         * here but GeoTools also offers other, more accurate methods.
-         */
-        AffineTransform screenToWorld = frame.getMapPane().getScreenToWorldTransform();
-        Rectangle2D worldRect = screenToWorld.createTransformedShape(screenRect).getBounds2D();
-        ReferencedEnvelope bbox =
-                new ReferencedEnvelope(
-                        worldRect, frame.getMapContent().getCoordinateReferenceSystem());
-
-        /*
-         * Create a Filter to select features that intersect with
-         * the bounding box
-         */
-        Filter filter = ff.intersects(ff.property(geometryAttributeName), ff.literal(bbox));
-
-        /*
-         * Use the filter to identify the selected features
-         */
-        try {
-            selectedFeatures = featureSource.getFeatures(filter);
-            initQueryLabModified();
-            queryLab.filterSelectedFeatures(selectedFeatures);
-            queryLab.setVisible(true);
-
-            Set<FeatureId> IDs = new HashSet<>();
-            try (SimpleFeatureIterator iter = selectedFeatures.features()) {
-                while (iter.hasNext()) {
-                    SimpleFeature feature = iter.next();
-                    IDs.add(feature.getIdentifier());
-
-                    System.out.println("   " + feature.getIdentifier());
-                }
-            }
-
-            if (IDs.isEmpty()) {
-                System.out.println("   no feature selected");
-            }
-
-            displaySelectedFeatures(IDs);
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
 
     /**
      *MousePressed and MouseReleased select
@@ -457,7 +403,7 @@ public class GISMap {
         else{
             y1 = startScreenPos.y;
             y2 = endScreenPos.y;}
-        Rectangle screenRect = new Rectangle(x1, y2, x2 - x1, y1 - y2);
+        Rectangle screenRect = new Rectangle(x1, y2, x2 - x1 + 2, y1 - y2 + 2);
         /*
          * Transform the screen rectangle into bounding box in the coordinate
          * reference system of our map context. Note: we are using a naive method
@@ -479,10 +425,13 @@ public class GISMap {
          * Use the filter to identify the selected features
          */
         try {
-            selectedFeatures = featureSource.getFeatures(filter);
+            //selectedFeatures = featureSource.getFeatures(filter);
+            FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
+            FeatureSource featureSource = featureLayer.getFeatureSource();
+            selectedFeatures = (SimpleFeatureCollection) featureSource.getFeatures(filter);
             initQueryLabModified();
             queryLab.filterSelectedFeatures(selectedFeatures);
-            queryLab.setVisible(true);
+            //queryLab.setVisible(true);
 
             Set<FeatureId> IDs = new HashSet<>();
             try (SimpleFeatureIterator iter = selectedFeatures.features()) {
@@ -527,7 +476,7 @@ public class GISMap {
 //            frame.getMapPane().repaint();
 //            layers.remove(layer);
 //        }
-        Layer layer = frame.getMapContent().layers().get(0);
+        Layer layer = frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
         ((FeatureLayer) layer).setStyle(style);
         frame.getMapPane().repaint();
     }
@@ -626,6 +575,7 @@ public class GISMap {
             geometryType = GISMap.GeomType.POINT;
         }
     }
+
     private void initQueryLabModified(){
         queryLab.setDataStore(store);
         try {
@@ -652,5 +602,10 @@ public class GISMap {
     {
         ReferencedEnvelope referencedEnvelope = selectedFeatures.getBounds();
         frame.getMapPane().setDisplayArea(referencedEnvelope);
+    }
+
+    public void intersectSelected()
+    {
+
     }
 }
