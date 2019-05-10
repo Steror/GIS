@@ -2,7 +2,6 @@ package org.geotools.tutorial.map;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
@@ -23,7 +22,6 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
-//import org.geotools.factory.Hints;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.GridReaderLayer;
@@ -33,7 +31,6 @@ import org.geotools.map.StyleLayer;
 import org.geotools.styling.*;
 import org.geotools.styling.Stroke;
 import org.geotools.swing.JMapFrame;
-//import org.geotools.swing.action.ResetAction;
 import org.geotools.swing.action.SafeAction;
 import org.geotools.swing.data.JFileDataStoreChooser;
 import org.geotools.swing.event.MapMouseEvent;
@@ -175,11 +172,6 @@ public class GISMap {
                         frame.getMapPane()
                                 .setCursorTool(
                                         new CursorTool() {
-
-                                            /*@Override
-                                            public void onMouseClicked(MapMouseEvent ev) {
-                                                selectFeatures(ev);
-                                            }*/
                                             @Override
                                             public void onMousePressed(MapMouseEvent ev) {
                                                 System.out.println("Mouse press at: " + ev.getWorldPos());
@@ -212,9 +204,6 @@ public class GISMap {
         toolBar.add(IntersectSelectedButton);
         IntersectSelectedButton.addActionListener(
                 e -> { intersectSelected(); });
-
-        //JButton ResetButton = new JButton(new ResetAction(frame.getMapPane()));
-        //ResetButton.setName("ToolbarResetButton");
 
         // Finally display the map frame.
         // When it is closed the app will exit.
@@ -255,7 +244,6 @@ public class GISMap {
         SimpleFeatureSource shapeFileSource = store.getFeatureSource();
 
         featureSource = store.getFeatureSource();
-        setGeometry();
 
         // Create a default style
         Style shpStyle = createDefaultStyle();
@@ -263,7 +251,6 @@ public class GISMap {
         Layer shpLayer = new FeatureLayer(shapeFileSource, shpStyle);
         map.addLayer(shpLayer);
         frame.getMapPane().repaint();
-        //initQueryLabModified();
     }
 
     /**
@@ -425,13 +412,11 @@ public class GISMap {
          * Use the filter to identify the selected features
          */
         try {
-            //selectedFeatures = featureSource.getFeatures(filter);
             FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
             FeatureSource featureSource = featureLayer.getFeatureSource();
             selectedFeatures = (SimpleFeatureCollection) featureSource.getFeatures(filter);
             initQueryLabModified();
             queryLab.filterSelectedFeatures(selectedFeatures);
-            //queryLab.setVisible(true);
 
             Set<FeatureId> IDs = new HashSet<>();
             try (SimpleFeatureIterator iter = selectedFeatures.features()) {
@@ -461,6 +446,8 @@ public class GISMap {
      */
     public void displaySelectedFeatures(Set<FeatureId> IDs) {
         Style style;
+        FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
+        featureSource = (SimpleFeatureSource) featureLayer.getFeatureSource();
 
         if (IDs.isEmpty()) {
             style = createDefaultStyle();
@@ -468,14 +455,7 @@ public class GISMap {
         } else {
             style = createSelectedStyle(IDs);
         }
-//        List<Layer> layers = frame.getMapContent().layers();
-//        while (!layers.isEmpty())
-//        {
-//            Layer layer = layers.get(layers.lastIndexOf(layers));
-//            ((FeatureLayer) layer).setStyle(style);
-//            frame.getMapPane().repaint();
-//            layers.remove(layer);
-//        }
+
         Layer layer = frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
         ((FeatureLayer) layer).setStyle(style);
         frame.getMapPane().repaint();
@@ -520,10 +500,10 @@ public class GISMap {
      */
     private Rule createRule(Color outlineColor, Color fillColor, float fillOpacity) {
         Symbolizer symbolizer = null;
-        Fill fill = null;
+        Fill fill;
         Stroke stroke = sf.createStroke(ff.literal(outlineColor), ff.literal(LINE_WIDTH));
 
-        //setGeometry();
+        setGeometry();
         switch (geometryType) {
             case POLYGON:
                 fill = sf.createFill(ff.literal(fillColor), ff.literal(fillOpacity));
@@ -559,6 +539,7 @@ public class GISMap {
      */
     private void setGeometry() {
         GeometryDescriptor geomDesc = featureSource.getSchema().getGeometryDescriptor();
+
         geometryAttributeName = geomDesc.getLocalName();
 
         Class<?> clazz = geomDesc.getType().getBinding();
