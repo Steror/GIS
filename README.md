@@ -44,7 +44,7 @@ Based on GeoTools version 20-SNAPSHOT
 <ul>
   <li>Adding more than one layer causes shape geometry to change (Fixed)</li>
   <li>Adding more than one layer breaks selection highlighting (Fixed)</li>
-  <li>Adding raster file after shape file will cause the raster to distort (Caused by adding layers with incompatible CRS, normal behavior)</li>
+  <li>Adding raster file after shape file will cause the raster to distort (Normal behavior. Caused by adding layers with incompatible CRS)</li>
   <li>Shape files have incorrect coordinates (Misreported because of unfamiliarity with different CRS)</li>
   <li>Coordinates Reference System (CRS) is not always shown/detected. Gets updated only after resizing window</li>
 </ul>
