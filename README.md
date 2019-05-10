@@ -7,6 +7,7 @@ Based on GeoTools version 20-SNAPSHOT
   <li>Zoom in/out ✔</li>
   <li>Pan ✔</li>
   <li>Full extent ✔</li>
+  <li>Select features, multiselect ✔</li>
   <li>Zoom to select ✔</li>
   <li>Show data for selected objects, show objects for selected data ✔</li>
   <li>Show data table for selected layer ✔</li>
@@ -16,9 +17,6 @@ Based on GeoTools version 20-SNAPSHOT
 
 
 # Incomplete Requirements ✔/❌ :
-<ol>
-    <li>Select features, multiselect ✔/❌</li>
-</ol>
 
 
 # Missing Requirements ❌ :
@@ -33,7 +31,7 @@ Based on GeoTools version 20-SNAPSHOT
   <li>Zoom in/out ✔</li>
   <li>Pan ✔</li>
   <li>Full extent ✔</li>
-  <li>Select features, multiselect ✔/❌</li>
+  <li>Select features, multiselect ✔</li>
   <li>Zoom to select ✔</li>
   <li>Show data for selected objects, show objects for selected data ✔</li>
   <li>Show data table for selected layer ✔</li>
@@ -44,9 +42,9 @@ Based on GeoTools version 20-SNAPSHOT
 
 # Bugs
 <ul>
-  <li>Adding more than one layer causes shape geometry to change</li>
-  <li>Adding more than one layer breaks selection highlighting</li>
-  <li>Adding raster file after shape file will cause the raster to distort</li>
-  <li>Shape files have incorrect coordinates</li>
-  <li>Coordinates Reference System (CRS) is not always shown/detected</li>
+  <li>Adding more than one layer causes shape geometry to change (Fixed)</li>
+  <li>Adding more than one layer breaks selection highlighting (Fixed)</li>
+  <li>Adding raster file after shape file will cause the raster to distort (Caused by adding layers with incompatible CRS, normal behavior)</li>
+  <li>Shape files have incorrect coordinates (Misreported because of unfamiliarity with different CRS)</li>
+  <li>Coordinates Reference System (CRS) is not always shown/detected. Gets updated only after resizing window</li>
 </ul>
