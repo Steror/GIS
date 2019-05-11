@@ -9,18 +9,18 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.*;
+import java.util.*;
 
 import org.geotools.coverage.GridSampleDimension;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.GridCoverage2DReader;
 import org.geotools.coverage.grid.io.GridFormatFinder;
-import org.geotools.data.FeatureSource;
-import org.geotools.data.FileDataStore;
-import org.geotools.data.FileDataStoreFinder;
+import org.geotools.data.*;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
+import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
@@ -36,6 +36,8 @@ import org.geotools.swing.data.JFileDataStoreChooser;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.CursorTool;
 import org.geotools.tutorial.filter.QueryLabModified;
+import org.geotools.tutorial.intersect.Intersector;
+import org.geotools.util.URLs;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPolygon;
@@ -45,6 +47,8 @@ import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
 import org.opengis.style.ContrastMethod;
+import org.geotools.data.memory.MemoryDataStore;
+import org.opengis.feature.simple.SimpleFeatureType;
 
 @SuppressWarnings("Duplicates")
 public class GISMap {
@@ -66,11 +70,12 @@ public class GISMap {
     }
 
     /*
-     * Some default style variables
+     * Some style variables
      */
     private static final Color LINE_COLOUR = Color.BLACK;
     private static final Color FILL_COLOUR = Color.BLACK;
-    private static final Color SELECTED_COLOUR = Color.CYAN;
+    private static final Color SELECTEDFILL_COLOUR = Color.CYAN;
+    private static final Color SELECTEDLINE_COLOUR = Color.CYAN;
     private static final float DEFAULT_OPACITY = 0.0f;
     private static final float OPACITY = 0.5f;
     private static final float LINE_WIDTH = 1.0f;
@@ -83,8 +88,10 @@ public class GISMap {
 
     QueryLabModified queryLab;
     MapContent map = new MapContent();
+    FileDataStore previousStore;
     FileDataStore store;
     public SimpleFeatureCollection selectedFeatures;
+    SimpleFeatureCollection intersected;
 
     public static void main(String[] args) throws Exception {
         GISMap myMap = new GISMap();
@@ -97,13 +104,12 @@ public class GISMap {
      */
     private void displayLayers() throws Exception {
 
-        // Create a JMapFrame with a menu to choose the display style for the
+        // Create a JMapFrame with a menu to choose the display style for the layers
         map.setTitle("GIS Application");
         frame = new JMapFrame(map);
         frame.enableLayerTable(true);
         frame.setSize(800, 600);
         frame.enableStatusBar(true);
-        // frame.enableTool(JMapFrame.Tool.ZOOM, JMapFrame.Tool.PAN, JMapFrame.Tool.RESET);
         frame.enableToolBar(true);
 
         JMenuBar menuBar = new JMenuBar();
@@ -203,7 +209,42 @@ public class GISMap {
         toolBar.addSeparator();
         toolBar.add(IntersectSelectedButton);
         IntersectSelectedButton.addActionListener(
-                e -> { intersectSelected(); });
+                e -> {
+                    try {
+                        intersectSelected();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                });
+
+        JButton QueryIntersectedButton = new JButton("Query intersected");
+        toolBar.addSeparator();
+        toolBar.add(QueryIntersectedButton);
+        QueryIntersectedButton.addActionListener(
+                e -> {
+                    try {
+                        queryLab.filterSelectedFeatures(intersected);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                });
+
+        JMenu saveMenu = new JMenu("Save");
+        menuBar.add(saveMenu);
+        saveMenu.add(
+                new SafeAction("Save selected features") {
+                    public void action(ActionEvent e) throws Throwable {
+                        exportToShapefile(selectedFeatures);
+                    }
+                });
+        saveMenu.add(
+                new SafeAction("Save intersected features") {
+                    public void action(ActionEvent e) throws Throwable {
+                        exportToShapefile(intersected);
+                    }
+                });
 
         // Finally display the map frame.
         // When it is closed the app will exit.
@@ -240,6 +281,7 @@ public class GISMap {
             return;
         }
 
+        previousStore = store;
         store = FileDataStoreFinder.getDataStore(file);
         SimpleFeatureSource shapeFileSource = store.getFeatureSource();
 
@@ -479,7 +521,7 @@ public class GISMap {
      * with the default colors.
      */
     private Style createSelectedStyle(Set<FeatureId> IDs) {
-        Rule selectedRule = createRule(SELECTED_COLOUR, SELECTED_COLOUR, OPACITY);
+        Rule selectedRule = createRule(SELECTEDLINE_COLOUR, SELECTEDFILL_COLOUR, OPACITY);
         selectedRule.setFilter(ff.id(IDs));
 
         Rule otherRule = createRule(LINE_COLOUR, FILL_COLOUR, DEFAULT_OPACITY);
@@ -585,8 +627,68 @@ public class GISMap {
         frame.getMapPane().setDisplayArea(referencedEnvelope);
     }
 
-    public void intersectSelected()
-    {
+    public void intersectSelected() throws Exception {
+        FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 2);
+        FeatureSource featureSource = featureLayer.getFeatureSource();
+        SimpleFeatureCollection backgroundFeatures = (SimpleFeatureCollection) featureSource.getFeatures();
 
+        featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
+        featureSource = featureLayer.getFeatureSource();
+        SimpleFeatureCollection foregroundFeatures = (SimpleFeatureCollection) featureSource.getFeatures();
+
+        //Intersector intersector = new Intersector(selectedFeatures, backgroundFeatures);
+        Intersector intersector = new Intersector(foregroundFeatures, backgroundFeatures);
+        intersector.setPrefixes("", "");
+
+        intersector.intersect();
+        intersected = intersector.getIntersected();
+        queryLab.filterSelectedFeatures(intersected);
+
+    }
+
+//    public void saveSelected()
+//    {
+//        //Csv2Shape shape = new Csv2Shape().getNewShapeFile();
+//    }
+
+    public DataStore exportToShapefile(SimpleFeatureCollection sfc)
+            throws IOException {
+        // existing feature source from MemoryDataStore
+        //SimpleFeatureSource featureSource = memory.getFeatureSource(typeName);
+
+        SimpleFeatureType ft = sfc.getSchema();
+        String typeName = ft.getTypeName();
+
+        String fileName = ft.getTypeName();
+        File file = new File("C:\\Users\\Steror\\Documents\\ArcGIS\\Map2\\MyShape", fileName + ".shp");
+
+        Map<String, java.io.Serializable> creationParams = new HashMap<>();
+        creationParams.put("url", URLs.fileToUrl(file));
+
+        FileDataStoreFactorySpi factory = FileDataStoreFinder.getDataStoreFactory("shp");
+        DataStore dataStore = factory.createNewDataStore(creationParams);
+
+        dataStore.createSchema(ft);
+
+        // The following workaround to write out the prj is no longer needed
+        // ((ShapefileDataStore)dataStore).forceSchemaCRS(ft.getCoordinateReferenceSystem());
+
+        SimpleFeatureStore featureStore = (SimpleFeatureStore) dataStore.getFeatureSource(typeName);
+
+        Transaction t = new DefaultTransaction();
+        try {
+            featureStore.addFeatures(sfc);  // grab all features
+            t.commit(); // write it out
+        } catch (IOException eek) {
+            eek.printStackTrace();
+            try {
+                t.rollback();
+            } catch (IOException doubleEeek) {
+                // rollback failed?
+            }
+        } finally {
+            t.close();
+        }
+        return dataStore;
     }
 }

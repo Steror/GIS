@@ -9,9 +9,11 @@ import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.FilterFactory2;
+import org.locationtech.jts.precision.GeometryPrecisionReducer;
 
 public class Intersector {
     private final FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
@@ -27,8 +29,8 @@ public class Intersector {
     public Intersector(SimpleFeatureCollection col1, SimpleFeatureCollection col2) {
         this.col1 = col1;
         this.col2 = col2;
-        prefix1 = col1.getSchema().getTypeName()+"_";
-        prefix2 = col2.getSchema().getTypeName()+"_";
+        //prefix1 = col1.getSchema().getTypeName()+"_";
+        //prefix2 = col2.getSchema().getTypeName()+"_";
     }
     
     public void setPrefixes(String prefix1, String prefix2) {
@@ -92,6 +94,7 @@ public class Intersector {
                         Geometry intersected = null;
                         Object attRecalcLength = null;
                         Object attRecalcArea = null;
+                        PrecisionModel precisionModel = new PrecisionModel(1000000000);
                         if (recalculateLength != null) {
                             attRecalcLength = feature1.getAttribute(recalculateLength);
                         }
@@ -101,6 +104,7 @@ public class Intersector {
                         for (Object attribute : feature1.getAttributes()) {
                             if (attribute instanceof Geometry) {
                                 Geometry geometry1 = (Geometry) attribute;
+                                geometry1 = GeometryPrecisionReducer.reduce(geometry1, precisionModel);
                                 intersected = geometry1.intersection(geometry2);
                                 sfb.add(intersected);
                             }
