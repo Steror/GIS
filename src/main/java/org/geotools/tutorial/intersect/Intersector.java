@@ -1,5 +1,7 @@
 package org.geotools.tutorial.intersect;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,11 +82,16 @@ public class Intersector {
     private void doUnthreaded() {
         SimpleFeatureBuilder sfb = new SimpleFeatureBuilder(sft);
         int i=0;
+        Double toBeTruncated;
+        Double truncatedDouble;
+        //Set precision to 9 decimal places instead of the given 10, solves non-noded intersection problem
+        PrecisionModel precisionModel = new PrecisionModel(1000000000);
         SimpleFeatureIterator iter2 = col2.features();
         try {
             while (iter2.hasNext()) {
                 SimpleFeature feature2 = iter2.next();
                 Geometry geometry2 = (Geometry) feature2.getDefaultGeometry();
+                geometry2 = GeometryPrecisionReducer.reduce(geometry2, precisionModel);
                 
                 SimpleFeatureCollection partCol1 = col1.subCollection(
                         ff.intersects(ff.property(the_geom), ff.literal(geometry2)));
@@ -98,8 +105,6 @@ public class Intersector {
                         Object attRecalcLength = null;
                         Object attRecalcArea = null;
 
-                        //Set precision to 9 decimal places instead of the given 10, solves non-noded intersection problem
-                        PrecisionModel precisionModel = new PrecisionModel(1000000000);
                         if (recalculateLength != null) {
                             attRecalcLength = feature1.getAttribute(recalculateLength);
                         }
@@ -115,10 +120,18 @@ public class Intersector {
                             }
                             else {
                                 if (attribute == attRecalcLength && intersected != null) {
-                                    sfb.add(intersected.getLength());
+                                    toBeTruncated = intersected.getLength();
+                                    truncatedDouble = BigDecimal.valueOf(toBeTruncated)
+                                            .setScale(6, RoundingMode.HALF_UP)
+                                            .doubleValue();
+                                    sfb.add(truncatedDouble);
                                 }
                                 else if (attribute == attRecalcArea && intersected != null) {
-                                    sfb.add(intersected.getArea());
+                                    toBeTruncated = intersected.getArea();
+                                    truncatedDouble = BigDecimal.valueOf(toBeTruncated)
+                                            .setScale(6, RoundingMode.HALF_UP)
+                                            .doubleValue();
+                                    sfb.add(truncatedDouble);
                                 }
                                 else {
                                     sfb.add(attribute);

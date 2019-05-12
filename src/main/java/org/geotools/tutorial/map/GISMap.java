@@ -10,6 +10,7 @@ import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.util.*;
 
 import org.geotools.coverage.GridSampleDimension;
@@ -25,6 +26,8 @@ import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
+import org.geotools.filter.text.cql2.CQL;
+import org.geotools.filter.text.cql2.CQLException;
 import org.geotools.gce.geotiff.GeoTiffFormat;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -38,9 +41,11 @@ import org.geotools.styling.Stroke;
 import org.geotools.swing.JMapFrame;
 import org.geotools.swing.action.SafeAction;
 import org.geotools.swing.data.JFileDataStoreChooser;
+import org.geotools.swing.dialog.JExceptionReporter;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.CursorTool;
 import org.geotools.tutorial.filter.QueryLabModified;
+import org.geotools.tutorial.intersect.GroupingBuilder;
 import org.geotools.tutorial.intersect.Intersector;
 import org.geotools.util.URLs;
 import org.locationtech.jts.geom.LineString;
@@ -50,6 +55,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.filter.expression.Function;
 import org.opengis.filter.identity.FeatureId;
 import org.opengis.style.ContrastMethod;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -96,6 +102,8 @@ public class GISMap {
     FileDataStore store;
     public SimpleFeatureCollection selectedFeatures;
     SimpleFeatureCollection intersected;
+
+    DefaultTableModel model = null; //model for displaying calculated table
 
     public static void main(String[] args) throws Exception {
         GISMap myMap = new GISMap();
@@ -154,6 +162,21 @@ public class GISMap {
                             ((StyleLayer) map.layers().get(0)).setStyle(style);
                             frame.repaint();
                         }
+                    }
+                });
+
+        JMenu saveMenu = new JMenu("Save");
+        menuBar.add(saveMenu);
+        saveMenu.add(
+                new SafeAction("Save selected features") {
+                    public void action(ActionEvent e) throws Throwable {
+                        exportToShapefile(selectedFeatures);
+                    }
+                });
+        saveMenu.add(
+                new SafeAction("Save intersected features") {
+                    public void action(ActionEvent e) throws Throwable {
+                        exportToShapefile(intersected);
                     }
                 });
         /*
@@ -231,18 +254,19 @@ public class GISMap {
                     }
                 });
 
-        JMenu saveMenu = new JMenu("Save");
-        menuBar.add(saveMenu);
-        saveMenu.add(
-                new SafeAction("Save selected features") {
-                    public void action(ActionEvent e) throws Throwable {
-                        exportToShapefile(selectedFeatures);
-                    }
-                });
-        saveMenu.add(
-                new SafeAction("Save intersected features") {
-                    public void action(ActionEvent e) throws Throwable {
-                        exportToShapefile(intersected);
+        JButton MagicButton = new JButton("Calculate");
+        toolBar.addSeparator();
+        toolBar.add(MagicButton);
+        MagicButton.addActionListener(
+                e -> {
+                    try {
+                        FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
+                        FeatureSource featureSource = featureLayer.getFeatureSource();
+                        SimpleFeatureCollection sfc = (SimpleFeatureCollection) featureSource.getFeatures();
+                        calculateRatio(sfc);
+                        queryLab.table.setModel(model);
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
                     }
                 });
 
@@ -637,7 +661,9 @@ public class GISMap {
 
         //Intersector intersector = new Intersector(selectedFeatures, backgroundFeatures);
         Intersector intersector = new Intersector(foregroundFeatures, backgroundFeatures);
-        intersector.setPrefixes("1", "");
+        intersector.recalculateLength("Shape_Leng");
+        intersector.recalculateArea("Shape_Area");
+        intersector.setPrefixes("A", "");
 
         intersector.intersect();
         intersected = intersector.getIntersected();
@@ -685,5 +711,144 @@ public class GISMap {
         return dataStore;
     }
 
-    
+    public void calculateRatio(SimpleFeatureCollection sfc)
+    {
+        String[] grouping = GroupingBuilder.build("A"+"GKODAS",
+                new String[] {"LIKE 'hd%'", "= 'ms0'", "= 'pu0'", "= 'ms4'"});
+        String[] titles = new String[] {"Hidrografijos teritorijos",
+                "Medžiais ir krūmais apaugusios teritorijos",
+                "Užstatytos teritorijos", "Pramoninių sodų masyvai"};
+
+        Function sum = ff.function("Collection_Sum", ff.property("A"+"Shape_are"));
+
+
+        SimpleFeatureIterator iter = sfc.features();
+        try {
+            while (iter.hasNext()) {
+                SimpleFeature feature = iter.next();
+                String title = (String) feature.getAttribute("VARDAS");
+                for (int i=0 ; i<grouping.length ; i++) {
+                    Filter filter = CQL.toFilter(""+"VARDAS = '"+title+"' AND "+grouping[i]);
+                    SimpleFeatureCollection filtered = sfc.subCollection(filter);
+                    double result = (Double) sum.evaluate(filtered);
+                    double muniArea = (Double) feature.getAttribute("Plotas");
+                    model.addRow(new String[] {title, String.valueOf(muniArea),
+                            titles[i], String.valueOf(result),
+                            String.valueOf(result*100/muniArea)});
+                }
+            }
+        } catch (CQLException ex) {
+            JExceptionReporter.showDialog(ex);
+        } finally {
+            iter.close();
+        }
+    }
+
+    private DefaultTableModel part3() throws IOException {
+        DefaultTableModel model = new DefaultTableModel(new String[] {"Administracinis vienetas",
+                "<- Plotas", "Teritorija", "<- Plotas", "Santykis (%)"}, 0);
+
+        FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 2);
+        FeatureSource featureSource = featureLayer.getFeatureSource();
+        SimpleFeatureCollection muniesCol = (SimpleFeatureCollection) featureSource.getFeatures();
+
+        featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
+        featureSource = featureLayer.getFeatureSource();
+        SimpleFeatureCollection territoriesCol = (SimpleFeatureCollection) featureSource.getFeatures();
+
+        String muniesPrefix = muniesCol.getSchema().getName().getLocalPart();
+        String territoriesPrefix = territoriesCol.getSchema().getName().getLocalPart();
+
+        Intersector intersector = new Intersector(territoriesCol, muniesCol);
+        intersector.recalculateArea("Shape_Area");
+        intersector.setName(territoriesPrefix+"_intersected");
+        intersector.intersect();
+        SimpleFeatureCollection intersected = intersector.getIntersected();
+        frame.getMapContent().addLayer(new FeatureLayer(intersected,
+                SLD.createSimpleStyle(intersected.getSchema())));
+
+        String[] grouping = GroupingBuilder.build(territoriesPrefix + "_GKODAS",
+                new String[] {"LIKE 'hd%'", "= 'ms0'", "= 'pu0'", "= 'ms4'"});
+        String[] titles = new String[] {"Hidrografijos teritorijos",
+                "Medžiais ir krūmais apaugusios teritorijos",
+                "Užstatytos teritorijos", "Pramoninių sodų masyvai"};
+
+        Function function = ff.function("Collection_Sum", ff.property(territoriesPrefix + "_SHAPE_area"));
+
+        SimpleFeatureIterator iter = muniesCol.features();
+        try {
+            while (iter.hasNext()) {
+                SimpleFeature feature = iter.next();
+                String title = (String) feature.getAttribute("SAV");
+                for (int i=0 ; i<grouping.length ; i++) {
+                    Filter filter = CQL.toFilter(muniesPrefix+"_SAV = '"+title+"' AND "+grouping[i]);
+                    double result = (Double) function.evaluate(intersected.subCollection(filter));
+                    double muniArea = (Double) feature.getAttribute("PLOT");
+                    model.addRow(new String[] {title, String.valueOf(muniArea),
+                            titles[i], String.valueOf(result),
+                            String.valueOf(result*100/muniArea)});
+                }
+            }
+        } catch (CQLException ex) {
+            JExceptionReporter.showDialog(ex);
+        } finally {
+            iter.close();
+        }
+
+        return model;
+
+        //part4(intersected);
+    }
+
+//    private void part4(SimpleFeatureCollection territoriesIntersected) {
+//        DefaultTableModel model = new DefaultTableModel(new String[] {
+//                "Administracinis vientas", "Teritorija", "<- Plotas",
+//                "Statinių plotas", "Santykis (%)"}, 0);
+//
+//        String territoriesIntersectedPrefix = territoriesIntersected.getSchema().getName().getLocalPart();
+//        String muniesPrefix = muniesCol.getSchema().getName().getLocalPart();
+//        String territoriesPrefix = territoriesCol.getSchema().getName().getLocalPart();
+//        String buildingsPrefix = buildingsCol.getSchema().getName().getLocalPart();
+//
+//        Intersector intersector = new Intersector(buildingsCol, territoriesIntersected);
+//        intersector.recalculateArea("SHAPE_area");
+//        intersector.setName(buildingsPrefix+"_intersected");
+//        intersector.intersect();
+//        SimpleFeatureCollection intersected = intersector.getIntersected();
+//
+//        mainFrame.getMapContent().addLayer(new FeatureLayer(intersected,
+//                SLD.createSimpleStyle(intersected.getSchema())));
+//
+//        String[] muniesGrouping = GroupingBuilder.build(muniesCol,
+//                "SAV",territoriesIntersectedPrefix+"_"+muniesPrefix+"_SAV");
+//        String[] territoriesGrouping = GroupingBuilder.build(territoriesIntersectedPrefix
+//                        +"_"+territoriesPrefix+"_GKODAS",
+//                new String[] {"LIKE 'hd%'", "= 'ms0'", "= 'pu0'", "= 'ms4'"});
+//        String[] grouping = GroupingBuilder.multiply(muniesGrouping, territoriesGrouping);
+//
+//        DefaultTableModel modelTerritories = (DefaultTableModel) tableTerritories.getModel();
+//
+//        Function function = ff.function("Collection_Sum", ff.property(buildingsPrefix+"_SHAPE_area"));
+//
+//        try {
+//            for (int i=0 ; i<grouping.length ; i++) {
+//                Filter filter = CQL.toFilter(grouping[i]);
+//                SimpleFeatureCollection filteredSubCol = intersected.subCollection(filter);
+//                double result = 0;
+//                if (!filteredSubCol.isEmpty()) {
+//                    result = ((Double) function.evaluate(filteredSubCol)).doubleValue();
+//                }
+//                double territoryArea = Double.parseDouble((String) modelTerritories.getValueAt(i, 3));
+//                model.addRow(new String[] {(String) modelTerritories.getValueAt(i, 0),
+//                        (String) modelTerritories.getValueAt(i, 2),
+//                        (String) modelTerritories.getValueAt(i, 3),
+//                        String.valueOf(result),
+//                        String.valueOf(result*100/territoryArea)});
+//            }
+//        } catch (CQLException ex) {
+//            JExceptionReporter.showDialog(ex);
+//        }
+//
+//        tableBuildings.setModel(model);
+//    }
 }
