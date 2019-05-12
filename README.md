@@ -13,6 +13,7 @@ Based on GeoTools version 20-SNAPSHOT
   <li>Show data table for selected layer ✔</li>
   <li>Select data by attributes and show the objects on the map ✔</li>
   <li>Select by location ✔</li>
+  <li>Save selected objects to a new layer ✔</li>
 </ol>
 
 
@@ -20,9 +21,6 @@ Based on GeoTools version 20-SNAPSHOT
 
 
 # Missing Requirements ❌ :
-<ol>
-  <li>Save selected objects to a new layer ❌</li>
-</ol>
 
 
 # Full Requirements:
@@ -37,7 +35,7 @@ Based on GeoTools version 20-SNAPSHOT
   <li>Show data table for selected layer ✔</li>
   <li>Select data by attributes and show the objects on the map ✔</li>
   <li>Select by location ✔</li>
-  <li>Save selected objects to a new layer ❌</li>
+  <li>Save selected objects to a new layer ✔</li>
 </ol>
 
 # Bugs
