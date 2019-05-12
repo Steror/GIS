@@ -22,6 +22,9 @@ import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
+import org.geotools.factory.Hints;
+import org.geotools.gce.geotiff.GeoTiffFormat;
+import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.GridReaderLayer;
@@ -47,7 +50,6 @@ import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
 import org.opengis.style.ContrastMethod;
-import org.geotools.data.memory.MemoryDataStore;
 import org.opengis.feature.simple.SimpleFeatureType;
 
 @SuppressWarnings("Duplicates")
@@ -167,11 +169,7 @@ public class GISMap {
 
         /*
          * When the user clicks the button we want to enable
-         * our custom feature selection tool. Since the only
-         * mouse action we are interested in is 'clicked', and
-         * we are not creating control icons or cursors here,
-         * we can just create our tool as an anonymous sub-class
-         * of CursorTool.
+         * our custom feature selection tool.
          */
         SelectButton.addActionListener(
                 e ->
@@ -252,7 +250,7 @@ public class GISMap {
         frame.setVisible(true);
     }
 
-    private void addRasterLayer() throws Exception {
+    private void addRasterLayer() {
 
         File file = JFileDataStoreChooser.showOpenFile("jpg", null);
         if (file == null) {
@@ -260,7 +258,7 @@ public class GISMap {
         }
 
         AbstractGridFormat format = GridFormatFinder.findFormat(file);
-//        // this is a bit hacky but does make more geotiffs work
+        // this is a bit hacky but does make more geotiffs work
 //        Hints hints = new Hints();
 //        if (format instanceof GeoTiffFormat) {
 //            hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
@@ -645,11 +643,6 @@ public class GISMap {
         queryLab.filterSelectedFeatures(intersected);
 
     }
-
-//    public void saveSelected()
-//    {
-//        //Csv2Shape shape = new Csv2Shape().getNewShapeFile();
-//    }
 
     public DataStore exportToShapefile(SimpleFeatureCollection sfc)
             throws IOException {

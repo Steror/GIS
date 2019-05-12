@@ -94,6 +94,8 @@ public class Intersector {
                         Geometry intersected = null;
                         Object attRecalcLength = null;
                         Object attRecalcArea = null;
+
+                        //Set precision to 9 decimal places instead of the given 10, solves non-noded intersection problem
                         PrecisionModel precisionModel = new PrecisionModel(1000000000);
                         if (recalculateLength != null) {
                             attRecalcLength = feature1.getAttribute(recalculateLength);
@@ -104,7 +106,7 @@ public class Intersector {
                         for (Object attribute : feature1.getAttributes()) {
                             if (attribute instanceof Geometry) {
                                 Geometry geometry1 = (Geometry) attribute;
-                                geometry1 = GeometryPrecisionReducer.reduce(geometry1, precisionModel);
+                                geometry1 = GeometryPrecisionReducer.reduce(geometry1, precisionModel); //Solve non-noded intersection
                                 intersected = geometry1.intersection(geometry2);
                                 sfb.add(intersected);
                             }
