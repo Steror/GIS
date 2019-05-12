@@ -6,6 +6,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.*;
@@ -17,6 +18,7 @@ import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.GridCoverage2DReader;
 import org.geotools.coverage.grid.io.GridFormatFinder;
 import org.geotools.data.*;
+import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
@@ -281,14 +283,13 @@ public class GISMap {
 
         previousStore = store;
         store = FileDataStoreFinder.getDataStore(file);
-        SimpleFeatureSource shapeFileSource = store.getFeatureSource();
 
         featureSource = store.getFeatureSource();
 
         // Create a default style
         Style shpStyle = createDefaultStyle();
 
-        Layer shpLayer = new FeatureLayer(shapeFileSource, shpStyle);
+        Layer shpLayer = new FeatureLayer(featureSource, shpStyle);
         map.addLayer(shpLayer);
         frame.getMapPane().repaint();
     }
@@ -636,12 +637,10 @@ public class GISMap {
 
         //Intersector intersector = new Intersector(selectedFeatures, backgroundFeatures);
         Intersector intersector = new Intersector(foregroundFeatures, backgroundFeatures);
-        intersector.setPrefixes("", "");
+        intersector.setPrefixes("1", "");
 
         intersector.intersect();
         intersected = intersector.getIntersected();
-        queryLab.filterSelectedFeatures(intersected);
-
     }
 
     public DataStore exportToShapefile(SimpleFeatureCollection sfc)
@@ -654,6 +653,7 @@ public class GISMap {
 
         String fileName = ft.getTypeName();
         File file = new File("C:\\Users\\Steror\\Documents\\ArcGIS\\Map2\\MyShape", fileName + ".shp");
+        //File file = JFileDataStoreChooser.showOpenFile("shp", null);
 
         Map<String, java.io.Serializable> creationParams = new HashMap<>();
         creationParams.put("url", URLs.fileToUrl(file));
@@ -684,4 +684,6 @@ public class GISMap {
         }
         return dataStore;
     }
+
+    
 }

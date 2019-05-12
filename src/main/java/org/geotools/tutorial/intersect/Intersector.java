@@ -1,5 +1,6 @@
 package org.geotools.tutorial.intersect;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +32,8 @@ public class Intersector {
         this.col2 = col2;
         //prefix1 = col1.getSchema().getTypeName()+"_";
         //prefix2 = col2.getSchema().getTypeName()+"_";
+        String string = col1.getSchema().getTypeName()+"_"+col2.getSchema().getTypeName()+"_Intersect";
+        setName(string);
     }
     
     public void setPrefixes(String prefix1, String prefix2) {
@@ -51,12 +54,12 @@ public class Intersector {
     }
     
     public void intersect() {
-        System.out.println("INFO: Intersect has started");
+        System.out.println("INFO: Intersect has started   " + LocalDateTime.now());
        
         makeSFT();
         doUnthreaded();
-        
-        System.out.println("INFO: Intersect has ended");
+
+        System.out.println("INFO: Intersect has ended   " + LocalDateTime.now());
     }
     
     private void makeSFT() {
