@@ -682,8 +682,10 @@ public class GISMap {
         String typeName = ft.getTypeName();
 
         String fileName = ft.getTypeName();
-        File file = new File("C:\\Users\\Steror\\Documents\\ArcGIS\\Map2\\MyShape", fileName + ".shp");
-        //File file = JFileDataStoreChooser.showOpenFile("shp", null);
+        JFileChooser f = new JFileChooser();
+        f.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        f.showSaveDialog(null);
+        File file = new File(f.getSelectedFile(),fileName+".shp");
 
         Map<String, java.io.Serializable> creationParams = new HashMap<>();
         creationParams.put("url", URLs.fileToUrl(file));
