@@ -7,6 +7,7 @@ import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.*;
@@ -102,8 +103,9 @@ public class GISMap {
     FileDataStore store;
     public SimpleFeatureCollection selectedFeatures;
     SimpleFeatureCollection intersected;
+    String pre1 = "", pre2 = "A";
 
-    DefaultTableModel model = null; //model for displaying calculated table
+    DefaultTableModel model = new DefaultTableModel(); //model for displaying calculated table
 
     public static void main(String[] args) throws Exception {
         GISMap myMap = new GISMap();
@@ -264,6 +266,7 @@ public class GISMap {
                         FeatureSource featureSource = featureLayer.getFeatureSource();
                         SimpleFeatureCollection sfc = (SimpleFeatureCollection) featureSource.getFeatures();
                         calculateRatio(sfc);
+                        //calculateRatio(intersected);
                         queryLab.table.setModel(model);
                     } catch (IOException ex) {
                         ex.printStackTrace();
@@ -272,6 +275,7 @@ public class GISMap {
 
         // Finally display the map frame.
         // When it is closed the app will exit.
+        map.getCoordinateReferenceSystem();
         frame.getMapPane().repaint();
         frame.setVisible(true);
     }
@@ -663,7 +667,7 @@ public class GISMap {
         Intersector intersector = new Intersector(foregroundFeatures, backgroundFeatures);
         intersector.recalculateLength("Shape_Leng");
         intersector.recalculateArea("Shape_Area");
-        intersector.setPrefixes("A", "");
+        intersector.setPrefixes(pre1, pre2);
 
         intersector.intersect();
         intersected = intersector.getIntersected();
@@ -711,37 +715,45 @@ public class GISMap {
         return dataStore;
     }
 
-    public void calculateRatio(SimpleFeatureCollection sfc)
-    {
-        String[] grouping = GroupingBuilder.build("A"+"GKODAS",
+    public void calculateRatio(SimpleFeatureCollection sfc) throws IOException {
+        FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 2);
+        FeatureSource featureSource = featureLayer.getFeatureSource();
+        SimpleFeatureCollection backgroundFeatures = (SimpleFeatureCollection) featureSource.getFeatures();
+
+        model = new DefaultTableModel(new String[] {"Administracinis vientas",
+                "<- Plotas", "Teritorija", "<- Plotas", "Santykis (%)"}, 0);
+
+        String[] grouping = GroupingBuilder.build(pre1+"GKODAS",
                 new String[] {"LIKE 'hd%'", "= 'ms0'", "= 'pu0'", "= 'ms4'"});
         String[] titles = new String[] {"Hidrografijos teritorijos",
                 "Medžiais ir krūmais apaugusios teritorijos",
                 "Užstatytos teritorijos", "Pramoninių sodų masyvai"};
 
-        Function sum = ff.function("Collection_Sum", ff.property("A"+"Shape_are"));
+        Function sum = ff.function("Collection_Sum", ff.property(pre1+"Shape_Area"));
+        System.out.println("INFO: Calculation has started   " + LocalDateTime.now());
 
-
-        SimpleFeatureIterator iter = sfc.features();
+        SimpleFeatureIterator iter = backgroundFeatures.features();
         try {
             while (iter.hasNext()) {
                 SimpleFeature feature = iter.next();
                 String title = (String) feature.getAttribute("VARDAS");
                 for (int i=0 ; i<grouping.length ; i++) {
-                    Filter filter = CQL.toFilter(""+"VARDAS = '"+title+"' AND "+grouping[i]);
-                    SimpleFeatureCollection filtered = sfc.subCollection(filter);
-                    double result = (Double) sum.evaluate(filtered);
+                    Filter filter = CQL.toFilter(pre2+"VARDAS = '"+title+"' AND "+grouping[i]);
+                    SimpleFeatureCollection filteredCol = sfc.subCollection(filter);
+                    double result = (Double) sum.evaluate(filteredCol);
                     double muniArea = (Double) feature.getAttribute("Plotas");
-                    model.addRow(new String[] {title, String.valueOf(muniArea),
-                            titles[i], String.valueOf(result),
-                            String.valueOf(result*100/muniArea)});
+                    model.addRow(new String[] {title, String.format("%.12f" ,muniArea),
+                            titles[i], String.format("%.12f" ,result),
+                            String.format("%.12f" ,result*100/muniArea)});
                 }
             }
+
         } catch (CQLException ex) {
             JExceptionReporter.showDialog(ex);
         } finally {
             iter.close();
         }
+        System.out.println("INFO: Calculation has ended  " + LocalDateTime.now());
     }
 
     private DefaultTableModel part3() throws IOException {
