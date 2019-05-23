@@ -6,7 +6,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,17 +19,13 @@ import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.GridCoverage2DReader;
 import org.geotools.coverage.grid.io.GridFormatFinder;
 import org.geotools.data.*;
-import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.factory.Hints;
 import org.geotools.filter.text.cql2.CQL;
 import org.geotools.filter.text.cql2.CQLException;
-import org.geotools.gce.geotiff.GeoTiffFormat;
-import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.GridReaderLayer;
@@ -217,6 +212,20 @@ public class GISMap {
         queryLab.setTitle("Query");
         queryLab.ShowMap.addActionListener(
                 e -> { showMap(); });
+        queryLab.FilterSelected.addActionListener(
+                e -> { SimpleFeatureCollection sfc = queryLab.getSelectedFeatures();
+                DataStore ds = null;
+                    try {
+                        ds = exportToDefaultShapefile(sfc);
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                    queryLab.setSelectedDataStore(ds);
+                    try {
+                        queryLab.filterSelectedFeatures(queryLab.selectedFeatures);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    } });
         QueryButton.addActionListener(e -> {
         // display the query frame when the button is pressed
             if(store != null)
@@ -250,7 +259,7 @@ public class GISMap {
         QueryIntersectedButton.addActionListener(
                 e -> {
                     try {
-                        queryLab.filterSelectedFeatures(intersected);
+                        queryLab.showSelectedFeatures(intersected);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -485,7 +494,7 @@ public class GISMap {
             FeatureSource featureSource = featureLayer.getFeatureSource();
             selectedFeatures = (SimpleFeatureCollection) featureSource.getFeatures(filter);
             initQueryLabModified();
-            queryLab.filterSelectedFeatures(selectedFeatures);
+            queryLab.showSelectedFeatures(selectedFeatures);
 
             Set<FeatureId> IDs = new HashSet<>();
             try (SimpleFeatureIterator iter = selectedFeatures.features()) {
@@ -695,8 +704,41 @@ public class GISMap {
 
         dataStore.createSchema(ft);
 
-        // The following workaround to write out the prj is no longer needed
-        // ((ShapefileDataStore)dataStore).forceSchemaCRS(ft.getCoordinateReferenceSystem());
+        SimpleFeatureStore featureStore = (SimpleFeatureStore) dataStore.getFeatureSource(typeName);
+
+        Transaction t = new DefaultTransaction();
+        try {
+            featureStore.addFeatures(sfc);  // grab all features
+            t.commit(); // write it out
+        } catch (IOException eek) {
+            eek.printStackTrace();
+            try {
+                t.rollback();
+            } catch (IOException doubleEeek) {
+                // rollback failed?
+            }
+        } finally {
+            t.close();
+        }
+        return dataStore;
+    }
+
+    public DataStore exportToDefaultShapefile(SimpleFeatureCollection sfc)
+            throws IOException {
+
+        SimpleFeatureType ft = sfc.getSchema();
+        String typeName = ft.getTypeName();
+
+        String fileName = ft.getTypeName();
+        File file = new File("DataStore",fileName+".shp");
+
+        Map<String, java.io.Serializable> creationParams = new HashMap<>();
+        creationParams.put("url", URLs.fileToUrl(file));
+
+        FileDataStoreFactorySpi factory = FileDataStoreFinder.getDataStoreFactory("shp");
+        DataStore dataStore = factory.createNewDataStore(creationParams);
+
+        dataStore.createSchema(ft);
 
         SimpleFeatureStore featureStore = (SimpleFeatureStore) dataStore.getFeatureSource(typeName);
 
@@ -722,7 +764,7 @@ public class GISMap {
         FeatureSource featureSource = featureLayer.getFeatureSource();
         SimpleFeatureCollection backgroundFeatures = (SimpleFeatureCollection) featureSource.getFeatures();
 
-        model = new DefaultTableModel(new String[] {"Administracinis vientas",
+        model = new DefaultTableModel(new String[] {"Administracinis vienetas",
                 "<- Plotas", "Teritorija", "<- Plotas", "Santykis (%)"}, 0);
 
         String[] grouping = GroupingBuilder.build(pre1+"GKODAS",

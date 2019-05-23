@@ -1,9 +1,6 @@
 package org.geotools.tutorial.filter;
 
-import org.geotools.data.DataStore;
-import org.geotools.data.DataStoreFactorySpi;
-import org.geotools.data.DataStoreFinder;
-import org.geotools.data.Query;
+import org.geotools.data.*;
 import org.geotools.data.postgis.PostgisNGDataStoreFactory;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -15,6 +12,7 @@ import org.geotools.swing.data.JDataStoreWizard;
 import org.geotools.swing.table.FeatureCollectionTableModel;
 import org.geotools.swing.wizard.JWizard;
 import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.filter.Filter;
 
@@ -40,11 +38,14 @@ import org.opengis.filter.identity.FeatureId;
 @SuppressWarnings("serial")
 public class QueryLabModified extends JFrame{
     public DataStore dataStore;
+    public DataStore selectedDataStore;
     public AbstractButton ShowMap;
+    public AbstractButton FilterSelected;
     private JComboBox<String> featureTypeCBox;
     public JTable table;
     private JTextField text;
     public SimpleFeatureCollection selectedFeatures;
+    public SimpleFeatureCollection filteredSelectedFeatures;
 
     public static void main(String[] args) throws Exception {
         JFrame frame = new QueryLabModified();
@@ -128,6 +129,8 @@ public class QueryLabModified extends JFrame{
                 });
         ShowMap = new JButton("Show on map");
         dataMenu.add(ShowMap);
+        FilterSelected = new JButton("Query selected");
+        dataMenu.add(FilterSelected);
     }
 
     private void connect(DataStoreFactorySpi format) throws Exception {
@@ -160,7 +163,18 @@ public class QueryLabModified extends JFrame{
         table.setModel(model);
     }
 
-    public void filterSelectedFeatures(SimpleFeatureCollection selectedFeatures) throws Exception {
+    public void filterSelectedFeatures(SimpleFeatureCollection sfc) throws Exception {
+        SimpleFeatureType ft = sfc.getSchema();
+        String typeName = ft.getTypeName();
+        SimpleFeatureSource source = selectedDataStore.getFeatureSource(typeName);
+        Filter filter = CQL.toFilter(text.getText());
+        //filteredSelectedFeatures = selectedFeatures.subCollection(filter);
+        filteredSelectedFeatures = source.getFeatures(filter);
+        FeatureCollectionTableModel model = new FeatureCollectionTableModel(filteredSelectedFeatures);
+        table.setModel(model);
+    }
+
+    public void showSelectedFeatures(SimpleFeatureCollection selectedFeatures) {
         this.selectedFeatures = selectedFeatures;
         FeatureCollectionTableModel model = new FeatureCollectionTableModel(selectedFeatures);
         table.setModel(model);
@@ -207,4 +221,11 @@ public class QueryLabModified extends JFrame{
     {
         return this.selectedFeatures;
     }
+
+    public SimpleFeatureCollection getFilteredSelectedFeatures()
+    {
+        return this.filteredSelectedFeatures;
+    }
+
+    public void setSelectedDataStore(DataStore dataStore) { this.selectedDataStore = dataStore;}
 }
