@@ -16,6 +16,18 @@ Pasirinktoje teritorijoje surasti kalvas nuo kurių būtų galima įrengti slidi
 
 Teritoriją naudokite tą pačią kaip II užduotyje
 
+<ul>
+  <li>Atlikti duotą užduotį, įgyvendinant funkcionalumą tam tikram tikslui pasiekti ir rezultatui suformuoti</li>
+  <li>Užduotį atlikti pratęsiant pirmos ir antros užduoties programos funkcionalumą</li>
+  <li>Naudoti ne mažiau 3 informacijos sluoksnių (nebūtina imti visą Lietuvos teritoriją)</li>
+  <li>Užduotyje būtina panaudoti paviršiaus kontekstą (kurį nors iš sluoksnių)</li>
+  <li>Naudoti ne mažiau 3-4 keičiamus interaktyvius parametrus (teritoriją, atstumus, pavadinimus, aukščius ir/ar kita)</li>
+  <li>Pradinė analizuojama teritorija pasirenkama interaktyviai pažymint stačiakampiu</li>
+  <li>Naudoti ne mažiau 3-4 veiksmus/operacijas susijusias su santykiais tarp objektų skirtinguose informacijos sluoksniuose (operacijos turi būti skirtingos savo esme, t.y. pavyzdžiui trys atstumų tikrinimai bus vertinami kaip viena operacija)</li>
+  <li>Gauta rezultatą reikia pavaizduoti grafiniame vaizde pateikiant atitinkamus atributinius duomenis</li>
+  <li>Jis turi būti pagrįstas ir turi būti pateikti visi duomenys (tiek grafinės tiek atributinės dalies) įsitikinti rezultato tikrumu (tuščias rezultatas vertinamas neigiamai)</li>
+
+
 ---
 # Part 2
 Papildyti I užduoties programą funkcijomis, kurios leidžia pasirinkti bet kokį plotinį objektą (pagal RIBOS_P) iš anksčiau atrinktų administracinių vienetų ir sukurti funkcijas, leidžiančias suskaičiuoti:
