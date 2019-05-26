@@ -176,6 +176,47 @@ public class GISMap {
                         exportToShapefile(intersected);
                     }
                 });
+        JMenu geoMenu = new JMenu("Geoprocessing");
+        menuBar.add(geoMenu);
+        geoMenu.add(
+                new SafeAction("Intersect") {
+                    public void action(ActionEvent e) {
+                            try {
+                                intersectSelected();
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                });
+        geoMenu.add(
+                new SafeAction("Query intersected") {
+                    public void action(ActionEvent e) {
+                        try {
+                            queryLab.showSelectedFeatures(intersected);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
+        JMenu part2Menu = new JMenu("Part 2");
+        menuBar.add(part2Menu);
+        part2Menu.add(
+                new SafeAction("Part 2.1 Dissolve and calculate") {
+                    public void action(ActionEvent e) {
+                        try {
+                            FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
+                            FeatureSource featureSource = featureLayer.getFeatureSource();
+                            SimpleFeatureCollection sfc = (SimpleFeatureCollection) featureSource.getFeatures();
+                            calculateRatio(sfc);
+                            //calculateRatio(intersected);
+                            queryLab.table.setModel(model);
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
         /*
          * Before making the map frame visible we add a new button to its
          * toolbar for our custom feature selection tool
@@ -239,51 +280,6 @@ public class GISMap {
         ZoomSelectedButton.addActionListener(
                 e -> { zoomToSelected(); });
 
-        JButton IntersectSelectedButton = new JButton("Intersect");
-        toolBar.addSeparator();
-        toolBar.add(IntersectSelectedButton);
-        IntersectSelectedButton.addActionListener(
-                e -> {
-                    try {
-                        intersectSelected();
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                });
-
-        JButton QueryIntersectedButton = new JButton("Query intersected");
-        toolBar.addSeparator();
-        toolBar.add(QueryIntersectedButton);
-        QueryIntersectedButton.addActionListener(
-                e -> {
-                    try {
-                        queryLab.showSelectedFeatures(intersected);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                });
-
-        JButton MagicButton = new JButton("Calculate");
-        toolBar.addSeparator();
-        toolBar.add(MagicButton);
-        MagicButton.addActionListener(
-                e -> {
-                    try {
-                        FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
-                        FeatureSource featureSource = featureLayer.getFeatureSource();
-                        SimpleFeatureCollection sfc = (SimpleFeatureCollection) featureSource.getFeatures();
-                        calculateRatio(sfc);
-                        //calculateRatio(intersected);
-                        queryLab.table.setModel(model);
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                });
-
-        // Finally display the map frame.
-        // When it is closed the app will exit.
         map.getCoordinateReferenceSystem();
         frame.getMapPane().repaint();
         frame.setVisible(true);
