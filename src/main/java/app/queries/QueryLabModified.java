@@ -1,17 +1,15 @@
-package org.geotools.tutorial.filter;
+package app.queries;
 
 import org.geotools.data.*;
 import org.geotools.data.postgis.PostgisNGDataStoreFactory;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
-import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.filter.text.cql2.CQL;
 import org.geotools.swing.action.SafeAction;
 import org.geotools.swing.data.JDataStoreWizard;
 import org.geotools.swing.table.FeatureCollectionTableModel;
 import org.geotools.swing.wizard.JWizard;
-import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.filter.Filter;
@@ -20,13 +18,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
-import org.geotools.tutorial.map.GISMap;
-import org.opengis.filter.identity.FeatureId;
 
 /**
  * The Query Lab is an excuse to try out Filters and Expressions on your own data with a table to

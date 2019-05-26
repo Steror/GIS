@@ -1,4 +1,4 @@
-package org.geotools.tutorial.map;
+package app.map;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -204,6 +204,23 @@ public class GISMap {
         menuBar.add(part2Menu);
         part2Menu.add(
                 new SafeAction("Part 2.1 Dissolve and calculate") {
+                    public void action(ActionEvent e) {
+                        try {
+                            FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
+                            FeatureSource featureSource = featureLayer.getFeatureSource();
+                            SimpleFeatureCollection sfc = (SimpleFeatureCollection) featureSource.getFeatures();
+                            calculateRatio(sfc);
+                            //calculateRatio(intersected);
+                            queryLab.table.setModel(model);
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
+        JMenu part3Menu = new JMenu("Part 3");
+        menuBar.add(part3Menu);
+        part3Menu.add(
+                new SafeAction("Open variable window") {
                     public void action(ActionEvent e) {
                         try {
                             FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
