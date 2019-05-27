@@ -1,8 +1,8 @@
 package app.queries;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.geotools.data.*;
-import org.geotools.data.postgis.PostgisNGDataStoreFactory;
-import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.filter.text.cql2.CQL;
@@ -15,9 +15,10 @@ import org.opengis.feature.type.FeatureType;
 import org.opengis.filter.Filter;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.Map;
 
 /**
@@ -29,7 +30,11 @@ import java.util.Map;
  */
 @SuppressWarnings("serial")
 public class QueryLabModified extends JFrame{
+    @Getter
+    @Setter
     public DataStore dataStore;
+    @Getter
+    @Setter
     public DataStore selectedDataStore;
     public AbstractButton ShowMap;
     public AbstractButton FilterSelected;
@@ -42,6 +47,7 @@ public class QueryLabModified extends JFrame{
     public static void main(String[] args) throws Exception {
         JFrame frame = new QueryLabModified();
         frame.setTitle("Query");
+        frame.setSize(800, 600);
         frame.setVisible(true);
     }
 
@@ -52,10 +58,19 @@ public class QueryLabModified extends JFrame{
         text = new JTextField(80);
         text.setText("include"); // include selects everything!
         getContentPane().add(text, BorderLayout.NORTH);
-
+        text.addKeyListener(new KeyAdapter() {
+                                public void keyReleased(KeyEvent e) {
+                                    if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                                        try {
+                                            filterFeatures();
+                                        } catch (Exception ex) {
+                                            ex.printStackTrace();
+                                        }
+                                    }
+                                }
+                            });
         table = new JTable();
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        table.setModel(new DefaultTableModel(5, 5));
         table.setPreferredScrollableViewportSize(new Dimension(500, 200));
 
         JScrollPane scrollPane = new JScrollPane(table);
@@ -64,9 +79,6 @@ public class QueryLabModified extends JFrame{
         JMenuBar menubar = new JMenuBar();
         setJMenuBar(menubar);
 
-        JMenu fileMenu = new JMenu("File");
-        menubar.add(fileMenu);
-
         featureTypeCBox = new JComboBox<>();
         menubar.add(featureTypeCBox);
 
@@ -74,49 +86,12 @@ public class QueryLabModified extends JFrame{
         menubar.add(dataMenu);
 
         menubar.add(dataMenu);
-        pack();
-        fileMenu.add(
-                new SafeAction("Open shapefile...") {
-                    public void action(ActionEvent e) throws Throwable {
-                        connect(new ShapefileDataStoreFactory());
-                    }
-                });
-        fileMenu.add(
-                new SafeAction("Connect to PostGIS database...") {
-                    public void action(ActionEvent e) throws Throwable {
-                        connect(new PostgisNGDataStoreFactory());
-                    }
-                });
-        fileMenu.add(
-                new SafeAction("Connect to DataStore...") {
-                    public void action(ActionEvent e) throws Throwable {
-                        connect(null);
-                    }
-                });
-        fileMenu.addSeparator();
-        fileMenu.add(
-                new SafeAction("Exit") {
-                    public void action(ActionEvent e) throws Throwable {
-                        System.exit(0);
-                    }
-                });
+        setSize(1300, 300);//pack();
 
-        dataMenu.add(
-                new SafeAction("Get features") {
-                    public void action(ActionEvent e) throws Throwable {
-                        filterFeatures();
-                    }
-                });
         dataMenu.add(
                 new SafeAction("Count") {
                     public void action(ActionEvent e) throws Throwable {
                         countFeatures();
-                    }
-                });
-        dataMenu.add(
-                new SafeAction("Geometry") {
-                    public void action(ActionEvent e) throws Throwable {
-                        queryFeatures();
                     }
                 });
         ShowMap = new JButton("Show on map");
@@ -141,8 +116,6 @@ public class QueryLabModified extends JFrame{
     public void updateUI() throws Exception {
         ComboBoxModel<String> cbm = new DefaultComboBoxModel<>(dataStore.getTypeNames());
         featureTypeCBox.setModel(cbm);
-
-        table.setModel(new DefaultTableModel(5, 5));
     }
 
     public void filterFeatures() throws Exception {
@@ -205,10 +178,6 @@ public class QueryLabModified extends JFrame{
 
     }
 
-    public void setDataStore(DataStore dataStore) {
-        this.dataStore = dataStore;
-    }
-
     public SimpleFeatureCollection getSelectedFeatures()
     {
         return this.selectedFeatures;
@@ -219,5 +188,4 @@ public class QueryLabModified extends JFrame{
         return this.filteredSelectedFeatures;
     }
 
-    public void setSelectedDataStore(DataStore dataStore) { this.selectedDataStore = dataStore;}
 }

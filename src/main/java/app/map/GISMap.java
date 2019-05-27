@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.util.*;
 
+import app.part3.ConfigWindow;
 import org.geotools.coverage.GridSampleDimension;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
@@ -40,7 +41,7 @@ import org.geotools.swing.data.JFileDataStoreChooser;
 import org.geotools.swing.dialog.JExceptionReporter;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.CursorTool;
-import org.geotools.tutorial.filter.QueryLabModified;
+import app.queries.QueryLabModified;
 import org.geotools.tutorial.intersect.GroupingBuilder;
 import org.geotools.tutorial.intersect.Intersector;
 import org.geotools.util.URLs;
@@ -66,18 +67,13 @@ public class GISMap {
     private JMapFrame frame;
     private GridCoverage2DReader reader;
 
-    /*
-     * Convenient constants for the type of feature geometry in the shapefile
-     */
     private enum GeomType {
         POINT,
         LINE,
         POLYGON
     }
 
-    /*
-     * Some style variables
-     */
+    // Some style variables
     private static final Color LINE_COLOUR = Color.BLACK;
     private static final Color FILL_COLOUR = Color.BLACK;
     private static final Color SELECTEDFILL_COLOUR = Color.CYAN;
@@ -99,6 +95,7 @@ public class GISMap {
     public SimpleFeatureCollection selectedFeatures;
     SimpleFeatureCollection intersected;
     String pre1 = "", pre2 = "A";
+    ConfigWindow config;
 
     DefaultTableModel model = new DefaultTableModel(); //model for displaying calculated table
 
@@ -107,17 +104,12 @@ public class GISMap {
         myMap.displayLayers();
     }
 
-
-    /**
-     * Displays a GeoTIFF file overlaid with a Shapefile
-     */
     private void displayLayers() throws Exception {
-
-        // Create a JMapFrame with a menu to choose the display style for the layers
         map.setTitle("GIS Application");
         frame = new JMapFrame(map);
         frame.enableLayerTable(true);
         frame.setSize(800, 600);
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.enableStatusBar(true);
         frame.enableToolBar(true);
 
@@ -220,18 +212,10 @@ public class GISMap {
         JMenu part3Menu = new JMenu("Part 3");
         menuBar.add(part3Menu);
         part3Menu.add(
-                new SafeAction("Open variable window") {
+                new SafeAction("Open config window") {
                     public void action(ActionEvent e) {
-                        try {
-                            FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
-                            FeatureSource featureSource = featureLayer.getFeatureSource();
-                            SimpleFeatureCollection sfc = (SimpleFeatureCollection) featureSource.getFeatures();
-                            calculateRatio(sfc);
-                            //calculateRatio(intersected);
-                            queryLab.table.setModel(model);
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
+                        if (config == null) config = new ConfigWindow();
+                        else config.getFrame().setVisible(true);
                     }
                 });
         /*
@@ -286,7 +270,7 @@ public class GISMap {
                     } });
         QueryButton.addActionListener(e -> {
         // display the query frame when the button is pressed
-            if(store != null)
+            if(queryLab.getDataStore() != store)
             initQueryLabModified();
             queryLab.setVisible(true);
 
