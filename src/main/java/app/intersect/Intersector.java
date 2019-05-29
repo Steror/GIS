@@ -1,4 +1,4 @@
-package org.geotools.tutorial.intersect;
+package app.intersect;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

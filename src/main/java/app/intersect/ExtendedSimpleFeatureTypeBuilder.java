@@ -1,4 +1,4 @@
-package org.geotools.tutorial.intersect;
+package app.intersect;
 
 import org.geotools.feature.AttributeTypeBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;

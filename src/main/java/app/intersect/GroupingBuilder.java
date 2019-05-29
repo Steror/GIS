@@ -1,4 +1,4 @@
-package org.geotools.tutorial.intersect;
+package app.intersect;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;

@@ -42,8 +42,8 @@ import org.geotools.swing.dialog.JExceptionReporter;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.CursorTool;
 import app.queries.QueryLabModified;
-import org.geotools.tutorial.intersect.GroupingBuilder;
-import org.geotools.tutorial.intersect.Intersector;
+import app.intersect.GroupingBuilder;
+import app.intersect.Intersector;
 import org.geotools.util.URLs;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
@@ -88,16 +88,15 @@ public class GISMap {
     private String geometryAttributeName;
     private GISMap.GeomType geometryType;
 
-    QueryLabModified queryLab;
-    MapContent map = new MapContent();
-    FileDataStore previousStore;
-    FileDataStore store;
-    public SimpleFeatureCollection selectedFeatures;
-    SimpleFeatureCollection intersected;
-    String pre1 = "", pre2 = "A";
-    ConfigWindow config;
-
-    DefaultTableModel model = new DefaultTableModel(); //model for displaying calculated table
+    private QueryLabModified queryLab;
+    private MapContent map = new MapContent();
+    private FileDataStore previousStore;
+    private FileDataStore store;
+    private SimpleFeatureCollection selectedFeatures;
+    private SimpleFeatureCollection intersected;
+    private String pre1 = "", pre2 = "A";
+    private ConfigWindow config;
+    private DefaultTableModel model = new DefaultTableModel(); //model for displaying calculated table
 
     public static void main(String[] args) throws Exception {
         GISMap myMap = new GISMap();
@@ -112,6 +111,9 @@ public class GISMap {
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.enableStatusBar(true);
         frame.enableToolBar(true);
+        queryLab = new QueryLabModified();
+        queryLab.setTitle("Query");
+        config = new ConfigWindow();
 
         JMenuBar menuBar = new JMenuBar();
         frame.setJMenuBar(menuBar);
@@ -175,8 +177,6 @@ public class GISMap {
                     public void action(ActionEvent e) {
                             try {
                                 intersectSelected();
-                            } catch (IOException ex) {
-                                ex.printStackTrace();
                             } catch (Exception ex) {
                                 ex.printStackTrace();
                             }
@@ -203,6 +203,7 @@ public class GISMap {
                             SimpleFeatureCollection sfc = (SimpleFeatureCollection) featureSource.getFeatures();
                             calculateRatio(sfc);
                             //calculateRatio(intersected);
+                            model = part3();
                             queryLab.table.setModel(model);
                         } catch (IOException ex) {
                             ex.printStackTrace();
@@ -214,27 +215,42 @@ public class GISMap {
         part3Menu.add(
                 new SafeAction("Open config window") {
                     public void action(ActionEvent e) {
-                        if (config == null) config = new ConfigWindow();
-                        else config.getFrame().setVisible(true);
+                        config.getFrame().setVisible(true);
                     }
                 });
-        /*
-         * Before making the map frame visible we add a new button to its
-         * toolbar for our custom feature selection tool
-         */
+        part3Menu.add(
+                new SafeAction("Set layer as roads") {
+                    public void action(ActionEvent e) {
+                        config.setRoadSFS(featureSource);
+                    }
+                });
+        part3Menu.add(
+                new SafeAction("Set layer as rivers") {
+                    public void action(ActionEvent e) {
+                        config.setRiverSFS(featureSource);
+                    }
+                });
+        part3Menu.add(
+                new SafeAction("Set layer as areas") {
+                    public void action(ActionEvent e) {
+                        config.setAreaSFS(featureSource);
+                    }
+                });
+
         JToolBar toolBar = frame.getToolBar();
         JButton SelectButton = new JButton("Select");
         toolBar.addSeparator();
         toolBar.add(SelectButton);
+        JButton ZoomSelectedButton = new JButton("Zoom to selected");
+        toolBar.addSeparator();
+        toolBar.add(ZoomSelectedButton);
+        ZoomSelectedButton.addActionListener(
+                e -> zoomToSelected());
 
         JButton QueryButton = new JButton("Query");
         toolBar.addSeparator();
         toolBar.add(QueryButton);
 
-        /*
-         * When the user clicks the button we want to enable
-         * our custom feature selection tool.
-         */
         SelectButton.addActionListener(
                 e ->
                         frame.getMapPane()
@@ -247,13 +263,35 @@ public class GISMap {
                                             }
                                             @Override
                                             public void onMouseReleased(MapMouseEvent ev) {
-                                                selectBoxFeatures(ev);
+                                                System.out.println("Mouse release at: " + ev.getWorldPos());
+                                                endScreenPos = ev.getPoint();
+                                                selectBoxFeatures();
                                             }
                                         }));
-        queryLab = new QueryLabModified();
-        queryLab.setTitle("Query");
+
+        JButton SelectConditionAreaButton = new JButton("Select Condition Area");
+        toolBar.addSeparator();
+        toolBar.add(SelectConditionAreaButton);
+        SelectConditionAreaButton.addActionListener(
+                e ->
+                        frame.getMapPane()
+                                .setCursorTool(
+                                        new CursorTool() {
+                                            @Override
+                                            public void onMousePressed(MapMouseEvent ev) {
+                                                System.out.println("Mouse press at: " + ev.getWorldPos());
+                                                startScreenPos = ev.getPoint();
+                                            }
+                                            @Override
+                                            public void onMouseReleased(MapMouseEvent ev) {
+                                                System.out.println("Mouse release at: " + ev.getWorldPos());
+                                                endScreenPos = ev.getPoint();
+                                                selectConditionAreaFeatures();
+                                            }
+                                        }));
+
         queryLab.ShowMap.addActionListener(
-                e -> { showMap(); });
+                e -> showMap());
         queryLab.FilterSelected.addActionListener(
                 e -> { SimpleFeatureCollection sfc = queryLab.getSelectedFeatures();
                 DataStore ds = null;
@@ -275,15 +313,69 @@ public class GISMap {
             queryLab.setVisible(true);
 
         });
-        JButton ZoomSelectedButton = new JButton("Zoom to selected");
-        toolBar.addSeparator();
-        toolBar.add(ZoomSelectedButton);
-        ZoomSelectedButton.addActionListener(
-                e -> { zoomToSelected(); });
 
         map.getCoordinateReferenceSystem();
         frame.getMapPane().repaint();
         frame.setVisible(true);
+    }
+
+    private void selectConditionAreaFeatures() {
+        Filter filter = getBBoxFilter();
+        try {
+            config.setRoadSFC(config.getRoadSFS().getFeatures(filter));
+            config.setRiverSFC(config.getRiverSFS().getFeatures(filter));
+            config.setAreaSFC(config.getAreaSFS().getFeatures(filter));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        if (config != null)
+        {
+            try {
+                config.findSuitableArea();
+                config.findUnsuitableArea();
+                config.removeBufferredArea(config.getUnsuitableArea(), config.getDistance2());
+                exportToShapefile(config.getSuitableArea());
+            } catch (CQLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    private Filter getBBoxFilter() {
+        int x1, x2, y1, y2;
+        if(endScreenPos.x > startScreenPos.x){
+            x1 = startScreenPos.x;
+            x2 = endScreenPos.x;}
+        else{
+            x1 = endScreenPos.x;
+            x2 = startScreenPos.x;}
+        if(endScreenPos.y > startScreenPos.y){
+            y1 = endScreenPos.y;
+            y2 = startScreenPos.y;}
+        else{
+            y1 = startScreenPos.y;
+            y2 = endScreenPos.y;}
+        Rectangle screenRect = new Rectangle(x1, y2, x2 - x1 + 2, y1 - y2 + 2);
+
+        /*
+         * Transform the screen rectangle into bounding box in the coordinate
+         * reference system of our map context. Note: we are using a naive method
+         * here but GeoTools also offers other, more accurate methods.
+         */
+        AffineTransform screenToWorld = frame.getMapPane().getScreenToWorldTransform();
+        Rectangle2D worldRect = screenToWorld.createTransformedShape(screenRect).getBounds2D();
+        ReferencedEnvelope bbox =
+                new ReferencedEnvelope(
+                        worldRect, frame.getMapContent().getCoordinateReferenceSystem());
+
+        /*
+         * Create a Filter to select features that intersect with
+         * the bounding box
+         */
+        return ff.intersects(ff.property(geometryAttributeName), ff.literal(bbox));
     }
 
     private void addRasterLayer() {
@@ -320,7 +412,6 @@ public class GISMap {
 
         featureSource = store.getFeatureSource();
 
-        // Create a default style
         Style shpStyle = createDefaultStyle();
 
         Layer shpLayer = new FeatureLayer(featureSource, shpStyle);
@@ -328,11 +419,6 @@ public class GISMap {
         frame.getMapPane().repaint();
     }
 
-    /**
-     * Create a Style to display a selected band of the GeoTIFF image as a greyscale layer
-     *
-     * @return a new Style instance to render the image in greyscale
-     */
     private Style createGreyscaleStyle() {
         GridCoverage2D cov;
         try {
@@ -361,15 +447,6 @@ public class GISMap {
         return null;
     }
 
-    /**
-     * Create a Style to display the specified band of the GeoTIFF image as a greyscale layer.
-     *
-     * <p>This method is a helper for createGreyScale() and is also called directly by the
-     * displayLayers() method when the application first starts.
-     *
-     * @param band the image band to use for the greyscale display
-     * @return a new Style instance to render the image in greyscale
-     */
     private Style createGreyscaleStyle(int band) {
         ContrastEnhancement ce = sf.contrastEnhancement(ff.literal(1.0), ContrastMethod.NORMALIZE);
         SelectedChannelType sct = sf.createSelectedChannelType(String.valueOf(band), ce);
@@ -381,14 +458,6 @@ public class GISMap {
         return SLD.wrapSymbolizers(sym);
     }
 
-    /**
-     * This method examines the names of the sample dimensions in the provided coverage looking for
-     * "red...", "green..." and "blue..." (case insensitive match). If these names are not found it
-     * uses bands 1, 2, and 3 for the red, green and blue channels. It then sets up a raster
-     * symbolizer and returns this wrapped in a Style.
-     *
-     * @return a new Style object containing a raster symbolizer set up for RGB image
-     */
     private Style createRGBStyle() {
         GridCoverage2D cov;
         try {
@@ -443,46 +512,9 @@ public class GISMap {
         return SLD.wrapSymbolizers(sym);
     }
 
-    /**
-     *MousePressed and MouseReleased select
-     */
-    void selectBoxFeatures(MapMouseEvent ev)
+    void selectBoxFeatures()
     {
-        System.out.println("Mouse release at: " + ev.getWorldPos());
-        int x1, x2, y1, y2;
-
-        endScreenPos = ev.getPoint();
-
-        if(endScreenPos.x > startScreenPos.x){
-            x1 = startScreenPos.x;
-            x2 = endScreenPos.x;}
-        else{
-            x1 = endScreenPos.x;
-            x2 = startScreenPos.x;}
-        if(endScreenPos.y > startScreenPos.y){
-            y1 = endScreenPos.y;
-            y2 = startScreenPos.y;}
-        else{
-            y1 = startScreenPos.y;
-            y2 = endScreenPos.y;}
-        Rectangle screenRect = new Rectangle(x1, y2, x2 - x1 + 2, y1 - y2 + 2);
-        /*
-         * Transform the screen rectangle into bounding box in the coordinate
-         * reference system of our map context. Note: we are using a naive method
-         * here but GeoTools also offers other, more accurate methods.
-         */
-        AffineTransform screenToWorld = frame.getMapPane().getScreenToWorldTransform();
-        Rectangle2D worldRect = screenToWorld.createTransformedShape(screenRect).getBounds2D();
-        ReferencedEnvelope bbox =
-                new ReferencedEnvelope(
-                        worldRect, frame.getMapContent().getCoordinateReferenceSystem());
-
-        /*
-         * Create a Filter to select features that intersect with
-         * the bounding box
-         */
-        Filter filter = ff.intersects(ff.property(geometryAttributeName), ff.literal(bbox));
-
+        Filter filter = getBBoxFilter();
         /*
          * Use the filter to identify the selected features
          */
@@ -513,12 +545,7 @@ public class GISMap {
             ex.printStackTrace();
         }
     }
-    /**
-     * Sets the display to paint selected features yellow and unselected features in the default
-     * style.
-     *
-     * @param IDs identifiers of currently selected features
-     */
+
     public void displaySelectedFeatures(Set<FeatureId> IDs) {
         Style style;
         FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
@@ -535,9 +562,7 @@ public class GISMap {
         ((FeatureLayer) layer).setStyle(style);
         frame.getMapPane().repaint();
     }
-    /**
-     * Create a default Style for feature display
-     */
+
     private Style createDefaultStyle() {
         Rule rule = createRule(LINE_COLOUR, FILL_COLOUR, DEFAULT_OPACITY);
 
@@ -549,10 +574,6 @@ public class GISMap {
         return style;
     }
 
-    /**
-     * Create a Style where features with given IDs are painted yellow, while others are painted
-     * with the default colors.
-     */
     private Style createSelectedStyle(Set<FeatureId> IDs) {
         Rule selectedRule = createRule(SELECTEDLINE_COLOUR, SELECTEDFILL_COLOUR, OPACITY);
         selectedRule.setFilter(ff.id(IDs));
@@ -569,10 +590,6 @@ public class GISMap {
         return style;
     }
 
-    /**
-     * Helper for createXXXStyle methods. Creates a new Rule containing a Symbolizer tailored to the
-     * geometry type of the features that we are displaying.
-     */
     private Rule createRule(Color outlineColor, Color fillColor, float fillOpacity) {
         Symbolizer symbolizer = null;
         Fill fill;
@@ -609,9 +626,6 @@ public class GISMap {
         return rule;
     }
 
-    /**
-     * Retrieve information about the feature geometry
-     */
     private void setGeometry() {
         GeometryDescriptor geomDesc = featureSource.getSchema().getGeometryDescriptor();
 
@@ -641,8 +655,7 @@ public class GISMap {
         }
     }
 
-    public void showMap()
-    {
+    public void showMap() {
         selectedFeatures = queryLab.getSelectedFeatures();
         Set<FeatureId> IDs = new HashSet<>();
         try (SimpleFeatureIterator iter = selectedFeatures.features()) {
@@ -849,59 +862,5 @@ public class GISMap {
         }
 
         return model;
-
-        //part4(intersected);
     }
-
-//    private void part4(SimpleFeatureCollection territoriesIntersected) {
-//        DefaultTableModel model = new DefaultTableModel(new String[] {
-//                "Administracinis vientas", "Teritorija", "<- Plotas",
-//                "Statinių plotas", "Santykis (%)"}, 0);
-//
-//        String territoriesIntersectedPrefix = territoriesIntersected.getSchema().getName().getLocalPart();
-//        String muniesPrefix = muniesCol.getSchema().getName().getLocalPart();
-//        String territoriesPrefix = territoriesCol.getSchema().getName().getLocalPart();
-//        String buildingsPrefix = buildingsCol.getSchema().getName().getLocalPart();
-//
-//        Intersector intersector = new Intersector(buildingsCol, territoriesIntersected);
-//        intersector.recalculateArea("SHAPE_area");
-//        intersector.setName(buildingsPrefix+"_intersected");
-//        intersector.intersect();
-//        SimpleFeatureCollection intersected = intersector.getIntersected();
-//
-//        mainFrame.getMapContent().addLayer(new FeatureLayer(intersected,
-//                SLD.createSimpleStyle(intersected.getSchema())));
-//
-//        String[] muniesGrouping = GroupingBuilder.build(muniesCol,
-//                "SAV",territoriesIntersectedPrefix+"_"+muniesPrefix+"_SAV");
-//        String[] territoriesGrouping = GroupingBuilder.build(territoriesIntersectedPrefix
-//                        +"_"+territoriesPrefix+"_GKODAS",
-//                new String[] {"LIKE 'hd%'", "= 'ms0'", "= 'pu0'", "= 'ms4'"});
-//        String[] grouping = GroupingBuilder.multiply(muniesGrouping, territoriesGrouping);
-//
-//        DefaultTableModel modelTerritories = (DefaultTableModel) tableTerritories.getModel();
-//
-//        Function function = ff.function("Collection_Sum", ff.property(buildingsPrefix+"_SHAPE_area"));
-//
-//        try {
-//            for (int i=0 ; i<grouping.length ; i++) {
-//                Filter filter = CQL.toFilter(grouping[i]);
-//                SimpleFeatureCollection filteredSubCol = intersected.subCollection(filter);
-//                double result = 0;
-//                if (!filteredSubCol.isEmpty()) {
-//                    result = ((Double) function.evaluate(filteredSubCol)).doubleValue();
-//                }
-//                double territoryArea = Double.parseDouble((String) modelTerritories.getValueAt(i, 3));
-//                model.addRow(new String[] {(String) modelTerritories.getValueAt(i, 0),
-//                        (String) modelTerritories.getValueAt(i, 2),
-//                        (String) modelTerritories.getValueAt(i, 3),
-//                        String.valueOf(result),
-//                        String.valueOf(result*100/territoryArea)});
-//            }
-//        } catch (CQLException ex) {
-//            JExceptionReporter.showDialog(ex);
-//        }
-//
-//        tableBuildings.setModel(model);
-//    }
 }
