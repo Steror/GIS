@@ -233,7 +233,8 @@ public class GISMap {
         part3Menu.add(
                 new SafeAction("Set layer as areas") {
                     public void action(ActionEvent e) {
-                        config.setAreaSFS(featureSource);
+                        FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
+                        config.setAreaSFS((SimpleFeatureSource) featureLayer.getFeatureSource());
                     }
                 });
 
@@ -322,25 +323,15 @@ public class GISMap {
     private void selectConditionAreaFeatures() {
         Filter filter = getBBoxFilter();
         try {
-            config.setRoadSFC(config.getRoadSFS().getFeatures(filter));
-            config.setRiverSFC(config.getRiverSFS().getFeatures(filter));
+            //config.setRoadSFC(config.getRoadSFS().getFeatures(filter));
+            //config.setRiverSFC(config.getRiverSFS().getFeatures(filter));
             config.setAreaSFC(config.getAreaSFS().getFeatures(filter));
+            config.findSuitableArea(config.getAreaSFC());
+            config.findUnsuitableArea(config.getAreaSFC());
+            config.removeBufferedArea(config.getUnsuitableArea(), config.getDistance2());
+            exportToShapefile(config.getSuitableArea());
         } catch (Exception ex) {
             ex.printStackTrace();
-        }
-        if (config != null)
-        {
-            try {
-                config.findSuitableArea();
-                config.findUnsuitableArea();
-                config.removeBufferredArea(config.getUnsuitableArea(), config.getDistance2());
-                exportToShapefile(config.getSuitableArea());
-            } catch (CQLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
         }
     }
 
@@ -386,14 +377,8 @@ public class GISMap {
         }
 
         AbstractGridFormat format = GridFormatFinder.findFormat(file);
-        // this is a bit hacky but does make more geotiffs work
-//        Hints hints = new Hints();
-//        if (format instanceof GeoTiffFormat) {
-//            hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
-//        }
         reader = format.getReader(file); //add second parameter hints for top code
 
-        // Initially display the raster in RGB
         Style rasterStyle = createRGBStyle();
         Layer rasterLayer = new GridReaderLayer(reader, rasterStyle);
         map.addLayer(rasterLayer);

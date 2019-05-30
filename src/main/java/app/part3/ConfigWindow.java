@@ -2,16 +2,24 @@ package app.part3;
 
 import app.buffer.LeanBuffer;
 import app.intersect.Intersector;
+import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 import lombok.Getter;
 import lombok.Setter;
+import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.filter.text.cql2.CQL;
 import org.geotools.filter.text.cql2.CQLException;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class ConfigWindow extends JFrame {
 
@@ -19,7 +27,7 @@ public class ConfigWindow extends JFrame {
     JFrame frame;
 
     @Getter
-    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 100.0, distance2 = 100.0, averageSlope = 100.0;
+    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 100.0, distance2 = 1000.0, averageSlope = 100.0;
 
     @Getter
     @Setter
@@ -80,25 +88,50 @@ public class ConfigWindow extends JFrame {
         frame.pack();
     }
 
-    public void findSuitableArea () throws CQLException, IOException {
-        Filter filter = CQL.toFilter("NOT (GKODAS LIKE 'hd%' OR GKODAS = 'ms4' OR GKODAS = 'pu0')");
-        this.suitableArea = getAreaSFS().getFeatures(filter);
+    public void findSuitableArea (SimpleFeatureCollection sfc) {
+        List<SimpleFeature> features = Collections.synchronizedList(new ArrayList<>());
+        SimpleFeatureType sft = sfc.getSchema();
+
+        try (SimpleFeatureIterator iter = sfc.features()) {
+            while (iter.hasNext()) {
+                SimpleFeature feature = iter.next();
+                String string = (String) feature.getAttribute("GKODAS");
+                if (!(string.matches("hd.*") || string.matches("ms4") || string.matches("pu0"))) {
+                    features.add(feature);
+                }
+            }
+        }
+        suitableArea = new ListFeatureCollection(sft, features);
     }
 
-    public void findUnsuitableArea () throws CQLException, IOException {
-        Filter filter = CQL.toFilter("GKODAS LIKE 'hd%' OR GKODAS = 'ms4' OR GKODAS = 'pu0'");
-        this.unsuitableArea = getAreaSFS().getFeatures(filter);
+    public void findUnsuitableArea (SimpleFeatureCollection sfc) {
+        List<SimpleFeature> features = Collections.synchronizedList(new ArrayList<>());
+        SimpleFeatureType sft = sfc.getSchema();
+
+        try (SimpleFeatureIterator iter = sfc.features()) {
+            while (iter.hasNext()) {
+                SimpleFeature feature = iter.next();
+                String string = (String) feature.getAttribute("GKODAS");
+                if (string.matches("hd.*") || string.matches("ms4") || string.matches("pu0")) {
+                    features.add(feature);
+                }
+            }
+        }
+        unsuitableArea = new ListFeatureCollection(sft, features);
     }
 
-    public void removeBufferredArea (SimpleFeatureCollection sfc, Double distance) throws CQLException, IOException {
-        LeanBuffer leanBuffer = new LeanBuffer("BUF"+sfc.getSchema().getTypeName(), sfc, distance); //Double.parseDouble(distance2.getText())
+    public void removeBufferedArea (SimpleFeatureCollection sfc, Double distance) throws CQLException, IOException {
+        LeanBuffer leanBuffer = new LeanBuffer("BUF"+sfc.getSchema().getTypeName(), sfc, distance);
         leanBuffer.buffer();
         SimpleFeatureCollection buffered = leanBuffer.getBuffered();
         Intersector intersector = new Intersector(this.suitableArea, buffered);
+        intersector.recalculateLength("Shape_Leng");
+        intersector.recalculateArea("Shape_Area");
         intersector.setPrefixes(pre1, pre2);
         intersector.intersect();
         SimpleFeatureCollection intersected = intersector.getIntersected();
-        Filter filter = CQL.toFilter("NOT (GKODAS LIKE 'hd%' OR GKODAS = 'ms4' OR GKODAS = 'pu0')");
-        this.suitableArea = intersected.subCollection(filter);
+        suitableArea = intersected;
+
+        findSuitableArea(intersected);
     }
 }
