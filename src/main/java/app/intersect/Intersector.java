@@ -56,12 +56,14 @@ public class Intersector {
     }
     
     public void intersect() {
+        long milis = System.currentTimeMillis();
         System.out.println("INFO: Intersect has started   " + LocalDateTime.now());
        
         makeSFT();
         doUnthreaded();
 
         System.out.println("INFO: Intersect has ended   " + LocalDateTime.now());
+        System.out.println("INFO: Intersect:   " + (System.currentTimeMillis()-milis)/1000d + "s");
     }
     
     private void makeSFT() {

@@ -715,6 +715,7 @@ public class GISMap {
         } finally {
             t.close();
         }
+        System.out.println("INFO: Finished export" + LocalDateTime.now());
         return dataStore;
     }
 
@@ -751,6 +752,7 @@ public class GISMap {
         } finally {
             t.close();
         }
+        System.out.println("INFO: Finished export" + LocalDateTime.now());
         return dataStore;
     }
 

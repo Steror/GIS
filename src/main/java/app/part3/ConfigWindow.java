@@ -9,8 +9,10 @@ import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.filter.text.cql2.CQL;
 import org.geotools.filter.text.cql2.CQLException;
+import org.locationtech.jts.geom.Geometry;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
@@ -27,7 +29,7 @@ public class ConfigWindow extends JFrame {
     JFrame frame;
 
     @Getter
-    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 100.0, distance2 = 1000.0, averageSlope = 100.0;
+    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 100.0, distance2 = 100.0, averageSlope = 100.0;
 
     @Getter
     @Setter
@@ -39,7 +41,7 @@ public class ConfigWindow extends JFrame {
     @Getter
     SimpleFeatureCollection suitableArea, unsuitableArea;
 
-    private String pre1 = "", pre2 = "A";
+    private String pre1 = "A", pre2 = "B";
 
     public ConfigWindow() {
         frame = new JFrame();
@@ -124,14 +126,41 @@ public class ConfigWindow extends JFrame {
         LeanBuffer leanBuffer = new LeanBuffer("BUF"+sfc.getSchema().getTypeName(), sfc, distance);
         leanBuffer.buffer();
         SimpleFeatureCollection buffered = leanBuffer.getBuffered();
-        Intersector intersector = new Intersector(this.suitableArea, buffered);
-        intersector.recalculateLength("Shape_Leng");
-        intersector.recalculateArea("Shape_Area");
+        Intersector intersector = new Intersector(buffered, suitableArea);
+        //intersector.recalculateLength("Shape_Leng");
+        //intersector.recalculateArea("Shape_Area");
         intersector.setPrefixes(pre1, pre2);
         intersector.intersect();
         SimpleFeatureCollection intersected = intersector.getIntersected();
-        suitableArea = intersected;
 
-        findSuitableArea(intersected);
+        List<SimpleFeature> features = Collections.synchronizedList(new ArrayList<>());
+        SimpleFeatureType sft = suitableArea.getSchema();
+        String suitableName = suitableArea.getSchema().getTypeName();
+
+        try (SimpleFeatureIterator iter = suitableArea.features()) {
+            while (iter.hasNext()) {
+                SimpleFeature feature = iter.next();
+                //String goodId = (String) feature.getAttribute("FeatureIdentifer");
+                String goodId = (String) feature.getID();
+                System.out.println("GOOD: "+goodId);
+                //goodId.replace(suitableName,"");
+                boolean isFound = false;
+                second: try (SimpleFeatureIterator iter2 = intersected.features()) {
+                    while (iter2.hasNext()) {
+                        SimpleFeature feature2 = iter2.next();
+                        String badId = (String) feature2.getAttribute("B#PID#");
+                        //System.out.println("BAD: "+badId);
+                        //badId.replace(suitableName,"");
+                        if (!(badId == goodId)) {
+                            isFound = true;
+                            break second;
+                        }
+                    }
+                }
+                if (!isFound)
+                    features.add(feature);
+            }
+        }
+        suitableArea = new ListFeatureCollection(sft, features);
     }
 }
