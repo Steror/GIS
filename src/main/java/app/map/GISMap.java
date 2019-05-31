@@ -203,7 +203,6 @@ public class GISMap {
                             SimpleFeatureCollection sfc = (SimpleFeatureCollection) featureSource.getFeatures();
                             calculateRatio(sfc);
                             //calculateRatio(intersected);
-                            model = part3();
                             queryLab.table.setModel(model);
                         } catch (IOException ex) {
                             ex.printStackTrace();
@@ -324,11 +323,12 @@ public class GISMap {
         Filter filter = getBBoxFilter();
         try {
             //config.setRoadSFC(config.getRoadSFS().getFeatures(filter));
-            //config.setRiverSFC(config.getRiverSFS().getFeatures(filter));
+            config.setRiverSFC(config.getRiverSFS().getFeatures(filter));
             config.setAreaSFC(config.getAreaSFS().getFeatures(filter));
             config.findSuitableArea(config.getAreaSFC());
             config.findUnsuitableArea(config.getAreaSFC());
-            config.removeBufferedArea(config.getUnsuitableArea(), config.getDistance2());
+            //config.removeBufferedArea(config.getUnsuitableArea(), config.getDistance2());
+            config.removeBufferedArea(config.getRiverSFC(), config.getDistance1());
             exportToShapefile(config.getSuitableArea());
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -771,6 +771,7 @@ public class GISMap {
                 "Užstatytos teritorijos", "Pramoninių sodų masyvai"};
 
         Function sum = ff.function("Collection_Sum", ff.property(pre1+"Shape_Area"));
+        long milis = System.currentTimeMillis();
         System.out.println("INFO: Calculation has started   " + LocalDateTime.now());
 
         SimpleFeatureIterator iter = backgroundFeatures.features();
@@ -795,6 +796,7 @@ public class GISMap {
             iter.close();
         }
         System.out.println("INFO: Calculation has ended  " + LocalDateTime.now());
+        System.out.println("INFO: Calculation:  " + (System.currentTimeMillis()-milis)/1000d + "s");
     }
 
     private DefaultTableModel part3() throws IOException {

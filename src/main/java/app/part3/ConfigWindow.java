@@ -2,26 +2,31 @@ package app.part3;
 
 import app.buffer.LeanBuffer;
 import app.intersect.Intersector;
+import app.queries.QueryLabModified;
 import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 import lombok.Getter;
 import lombok.Setter;
+import org.geotools.data.*;
 import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
+import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.filter.text.cql2.CQL;
 import org.geotools.filter.text.cql2.CQLException;
+import org.geotools.util.URLs;
 import org.locationtech.jts.geom.Geometry;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 
 import javax.swing.*;
+import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.*;
 
 public class ConfigWindow extends JFrame {
 
@@ -29,17 +34,18 @@ public class ConfigWindow extends JFrame {
     JFrame frame;
 
     @Getter
-    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 100.0, distance2 = 100.0, averageSlope = 100.0;
+    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 250.0, distance2 = 250.0, averageSlope = 100.0;
 
     @Getter
     @Setter
-    SimpleFeatureSource roadSFS, riverSFS, areaSFS;// heightSFS
+    SimpleFeatureSource roadSFS, riverSFS, areaSFS, suitableAreaSFS, intersectedSFS;// heightSFS
 
     @Getter
     @Setter
     SimpleFeatureCollection roadSFC, riverSFC, areaSFC;// heightSFC
     @Getter
-    SimpleFeatureCollection suitableArea, unsuitableArea;
+    @Setter
+    SimpleFeatureCollection suitableArea, suitableArea2, unsuitableArea, intersected;
 
     private String pre1 = "A", pre2 = "B";
 
@@ -104,6 +110,13 @@ public class ConfigWindow extends JFrame {
             }
         }
         suitableArea = new ListFeatureCollection(sft, features);
+        try {
+            suitableAreaSFS = saveAndLoad(suitableArea);
+            suitableArea = suitableAreaSFS.getFeatures();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void findUnsuitableArea (SimpleFeatureCollection sfc) {
@@ -126,32 +139,36 @@ public class ConfigWindow extends JFrame {
         LeanBuffer leanBuffer = new LeanBuffer("BUF"+sfc.getSchema().getTypeName(), sfc, distance);
         leanBuffer.buffer();
         SimpleFeatureCollection buffered = leanBuffer.getBuffered();
-        Intersector intersector = new Intersector(buffered, suitableArea);
+        Intersector intersector = new Intersector(suitableArea, buffered);
+        //suitableArea = suitableAreaSFS.getFeatures();
         //intersector.recalculateLength("Shape_Leng");
         //intersector.recalculateArea("Shape_Area");
         intersector.setPrefixes(pre1, pre2);
         intersector.intersect();
         SimpleFeatureCollection intersected = intersector.getIntersected();
+        //intersectedSFS = saveAndLoad(intersected);
+        //intersected = intersectedSFS.getFeatures();
 
         List<SimpleFeature> features = Collections.synchronizedList(new ArrayList<>());
         SimpleFeatureType sft = suitableArea.getSchema();
         String suitableName = suitableArea.getSchema().getTypeName();
+        String intersectedName = intersected.getSchema().getTypeName();
+        long milis = System.currentTimeMillis();
 
         try (SimpleFeatureIterator iter = suitableArea.features()) {
             while (iter.hasNext()) {
                 SimpleFeature feature = iter.next();
-                //String goodId = (String) feature.getAttribute("FeatureIdentifer");
-                String goodId = (String) feature.getID();
-                System.out.println("GOOD: "+goodId);
-                //goodId.replace(suitableName,"");
+                long goodId = (long) feature.getAttribute("OBJECTID");
+                //System.out.println("GOOD: "+goodId);
+                //goodId = goodId.replace(suitableName,"");
                 boolean isFound = false;
                 second: try (SimpleFeatureIterator iter2 = intersected.features()) {
                     while (iter2.hasNext()) {
                         SimpleFeature feature2 = iter2.next();
-                        String badId = (String) feature2.getAttribute("B#PID#");
+                        long badId = (long) feature2.getAttribute("AOBJECTID");
                         //System.out.println("BAD: "+badId);
-                        //badId.replace(suitableName,"");
-                        if (!(badId == goodId)) {
+                        //badId = badId.replace(intersectedName,"");
+                        if (badId == goodId) {
                             isFound = true;
                             break second;
                         }
@@ -161,6 +178,53 @@ public class ConfigWindow extends JFrame {
                     features.add(feature);
             }
         }
+        System.out.println("INFO: remove buffered  " + sfc.getSchema().getTypeName() + "   layer");
+        System.out.println("INFO: remove buffered: " + (System.currentTimeMillis()-milis)/1000d + "s");
         suitableArea = new ListFeatureCollection(sft, features);
+        //suitableAreaSFS = saveAndLoad(suitableArea);
+        //suitableArea = suitableAreaSFS.getFeatures();
+    }
+
+    public SimpleFeatureSource saveAndLoad(SimpleFeatureCollection sfc) throws IOException {
+
+        SimpleFeatureType ft = sfc.getSchema();
+        String typeName = ft.getTypeName();
+
+        String fileName = ft.getTypeName();
+        File file = new File("DataStore",fileName+".shp");
+
+        Map<String, Serializable> creationParams = new HashMap<>();
+        creationParams.put("url", URLs.fileToUrl(file));
+
+        FileDataStoreFactorySpi factory = FileDataStoreFinder.getDataStoreFactory("shp");
+        DataStore dataStore = factory.createNewDataStore(creationParams);
+
+        dataStore.createSchema(ft);
+
+        SimpleFeatureStore featureStore = (SimpleFeatureStore) dataStore.getFeatureSource(typeName);
+
+        Transaction t = new DefaultTransaction();
+        try {
+            featureStore.addFeatures(sfc);  // grab all features
+            t.commit(); // write it out
+        } catch (IOException eek) {
+            eek.printStackTrace();
+            try {
+                t.rollback();
+            } catch (IOException doubleEeek) {
+                // rollback failed?
+            }
+        } finally {
+            t.close();
+        }
+        System.out.println("INFO: Finished export" + LocalDateTime.now());
+
+        return dataStore.getFeatureSource(typeName);
+
+        //Style shpStyle = createDefaultStyle();
+        //Layer shpLayer = new FeatureLayer(featureSource, shpStyle);
+        //map.addLayer(shpLayer);
+        //frame.getMapPane().repaint();
+        //return dataStore;
     }
 }
