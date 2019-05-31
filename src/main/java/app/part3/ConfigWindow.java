@@ -2,8 +2,6 @@ package app.part3;
 
 import app.buffer.LeanBuffer;
 import app.intersect.Intersector;
-import app.queries.QueryLabModified;
-import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 import lombok.Getter;
 import lombok.Setter;
 import org.geotools.data.*;
@@ -12,14 +10,10 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
-import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.geotools.filter.text.cql2.CQL;
 import org.geotools.filter.text.cql2.CQLException;
 import org.geotools.util.URLs;
-import org.locationtech.jts.geom.Geometry;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.filter.Filter;
 
 import javax.swing.*;
 import java.io.File;
@@ -34,7 +28,7 @@ public class ConfigWindow extends JFrame {
     JFrame frame;
 
     @Getter
-    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 250.0, distance2 = 250.0, averageSlope = 100.0;
+    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 50.0, distance2 = 100.0, averageSlope = 100.0;
 
     @Getter
     @Setter
@@ -139,10 +133,11 @@ public class ConfigWindow extends JFrame {
         LeanBuffer leanBuffer = new LeanBuffer("BUF"+sfc.getSchema().getTypeName(), sfc, distance);
         leanBuffer.buffer();
         SimpleFeatureCollection buffered = leanBuffer.getBuffered();
+        saveAndLoad(buffered);
         Intersector intersector = new Intersector(suitableArea, buffered);
         //suitableArea = suitableAreaSFS.getFeatures();
-        //intersector.recalculateLength("Shape_Leng");
-        //intersector.recalculateArea("Shape_Area");
+        intersector.recalculateLength("Shape_Leng");
+        intersector.recalculateArea("Shape_Area");
         intersector.setPrefixes(pre1, pre2);
         intersector.intersect();
         SimpleFeatureCollection intersected = intersector.getIntersected();
@@ -165,7 +160,7 @@ public class ConfigWindow extends JFrame {
                 second: try (SimpleFeatureIterator iter2 = intersected.features()) {
                     while (iter2.hasNext()) {
                         SimpleFeature feature2 = iter2.next();
-                        long badId = (long) feature2.getAttribute("AOBJECTID");
+                        long badId = (long) feature2.getAttribute(pre1+"OBJECTID");
                         //System.out.println("BAD: "+badId);
                         //badId = badId.replace(intersectedName,"");
                         if (badId == goodId) {
@@ -184,6 +179,8 @@ public class ConfigWindow extends JFrame {
         //suitableAreaSFS = saveAndLoad(suitableArea);
         //suitableArea = suitableAreaSFS.getFeatures();
     }
+
+    //public findPeaks ()
 
     public SimpleFeatureSource saveAndLoad(SimpleFeatureCollection sfc) throws IOException {
 

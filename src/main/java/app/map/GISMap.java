@@ -322,13 +322,14 @@ public class GISMap {
     private void selectConditionAreaFeatures() {
         Filter filter = getBBoxFilter();
         try {
-            //config.setRoadSFC(config.getRoadSFS().getFeatures(filter));
+            config.setRoadSFC(config.getRoadSFS().getFeatures(filter));
             config.setRiverSFC(config.getRiverSFS().getFeatures(filter));
             config.setAreaSFC(config.getAreaSFS().getFeatures(filter));
             config.findSuitableArea(config.getAreaSFC());
             config.findUnsuitableArea(config.getAreaSFC());
-            //config.removeBufferedArea(config.getUnsuitableArea(), config.getDistance2());
+            config.removeBufferedArea(config.getUnsuitableArea(), config.getDistance2());
             config.removeBufferedArea(config.getRiverSFC(), config.getDistance1());
+            config.removeBufferedArea(config.getRoadSFC(), config.getDistance1());
             exportToShapefile(config.getSuitableArea());
         } catch (Exception ex) {
             ex.printStackTrace();

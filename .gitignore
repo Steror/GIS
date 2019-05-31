@@ -4,3 +4,8 @@
 .idea/
 *.class
 /DataStore
+*.shx
+*.shp
+*.prj
+*.fix
+*.dbf
