@@ -29,15 +29,15 @@ public class ConfigWindow extends JFrame {
     JFrame frame;
 
     @Getter
-    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 50.0, distance2 = 100.0, averageSlope = 0.15;
+    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 50.0, distance2 = 50.0, averageSlope = 0.15;
 
     @Getter
     @Setter
-    SimpleFeatureSource roadSFS, riverSFS, areaSFS, slopeSFS, suitableAreaSFS, intersectedSFS;// heightSFS
+    SimpleFeatureSource roadSFS, riverSFS, areaSFS, slopeSFS, peakSFS, suitableAreaSFS, intersectedSFS;
 
     @Getter
     @Setter
-    SimpleFeatureCollection roadSFC, riverSFC, areaSFC, slopeSFC;// heightSFC
+    SimpleFeatureCollection roadSFC, riverSFC, areaSFC, slopeSFC, peakSFC;
     @Getter
     @Setter
     SimpleFeatureCollection suitableArea, suitableArea2, unsuitableArea, intersected;
@@ -57,7 +57,7 @@ public class ConfigWindow extends JFrame {
         JLabel distance1Label = new JLabel("D1: Distance from roads and rivers");
         JTextField distance1JTF = new JTextField("50");
         JLabel distance2Label = new JLabel("D2: Distance from bodies of water, community gardens and urbanised areas");
-        JTextField distance2JTF = new JTextField("100");
+        JTextField distance2JTF = new JTextField("50");
         JLabel slopeLabel = new JLabel("A1: Average track slope");
         JTextField averageSlopeJTF = new JTextField("0.15");
         frame.getContentPane().add(lengthLabel);
@@ -196,6 +196,18 @@ public class ConfigWindow extends JFrame {
         //suitableAreaSFS = saveAndLoad(suitableArea);
     }
 
+    public void findPeaks (SimpleFeatureCollection peaks) throws IOException {
+        Intersector intersector = new Intersector(suitableArea, peaks);
+        intersector.recalculateLength("Shape_Leng");
+        intersector.recalculateArea("Shape_Area");
+        intersector.setPrefixes(pre1, pre2);
+        intersector.intersect();
+        SimpleFeatureCollection intersected = intersector.getIntersected();
+
+        System.out.println("INFO: found peaks inside area: " + intersected.size());
+        saveAndLoad(intersected);
+    }
+
     public SimpleFeatureSource saveAndLoad(SimpleFeatureCollection sfc) throws IOException {
 
         SimpleFeatureType ft = sfc.getSchema();
@@ -228,7 +240,7 @@ public class ConfigWindow extends JFrame {
         } finally {
             t.close();
         }
-        System.out.println("INFO: Finished export" + LocalDateTime.now());
+        System.out.println("INFO: Finished export " + LocalDateTime.now());
 
         return dataStore.getFeatureSource(typeName);
     }

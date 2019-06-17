@@ -240,6 +240,12 @@ public class GISMap {
                         config.setSlopeSFS(featureSource);
                     }
                 });
+        part3Menu.add(
+                new SafeAction("Set layer as peaks") {
+                    public void action(ActionEvent e) {
+                        config.setPeakSFS(featureSource);
+                    }
+                });
 
         JToolBar toolBar = frame.getToolBar();
         JButton SelectButton = new JButton("Select");
@@ -330,6 +336,7 @@ public class GISMap {
             config.setRiverSFC(config.getRiverSFS().getFeatures(filter));
             config.setAreaSFC(config.getAreaSFS().getFeatures(filter));
             config.setSlopeSFC(config.getSlopeSFS().getFeatures(filter));
+            config.setPeakSFC(config.getPeakSFS().getFeatures(filter));
             config.findSuitableArea(config.getAreaSFC());
             config.findUnsuitableArea(config.getAreaSFC());
             config.removeBufferedArea(config.getUnsuitableArea(), config.getDistance2());
@@ -337,6 +344,7 @@ public class GISMap {
             config.removeBufferedArea(config.getRoadSFC(), config.getDistance1());
             config.removeSlopeArea(config.getSlopeSFC(), config.getAverageSlope());
             exportToShapefile(config.getSuitableArea());
+            config.findPeaks(config.getPeakSFC());
         } catch (Exception ex) {
             ex.printStackTrace();
         }
