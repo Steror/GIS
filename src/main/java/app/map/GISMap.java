@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.*;
+import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.DefaultTableModel;
 import java.util.*;
 
@@ -231,9 +232,12 @@ public class GISMap {
                 });
         part3Menu.add(
                 new SafeAction("Set layer as areas") {
+                    public void action(ActionEvent e) { config.setAreaSFS(featureSource); }
+                });
+        part3Menu.add(
+                new SafeAction("Set layer as slopes") {
                     public void action(ActionEvent e) {
-                        FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
-                        config.setAreaSFS((SimpleFeatureSource) featureLayer.getFeatureSource());
+                        config.setSlopeSFS(featureSource);
                     }
                 });
 
@@ -325,11 +329,13 @@ public class GISMap {
             config.setRoadSFC(config.getRoadSFS().getFeatures(filter));
             config.setRiverSFC(config.getRiverSFS().getFeatures(filter));
             config.setAreaSFC(config.getAreaSFS().getFeatures(filter));
+            config.setSlopeSFC(config.getSlopeSFS().getFeatures(filter));
             config.findSuitableArea(config.getAreaSFC());
             config.findUnsuitableArea(config.getAreaSFC());
             config.removeBufferedArea(config.getUnsuitableArea(), config.getDistance2());
             config.removeBufferedArea(config.getRiverSFC(), config.getDistance1());
             config.removeBufferedArea(config.getRoadSFC(), config.getDistance1());
+            config.removeSlopeArea(config.getSlopeSFC(), config.getAverageSlope());
             exportToShapefile(config.getSuitableArea());
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -678,11 +684,7 @@ public class GISMap {
         intersected = intersector.getIntersected();
     }
 
-    public DataStore exportToShapefile(SimpleFeatureCollection sfc)
-            throws IOException {
-        // existing feature source from MemoryDataStore
-        //SimpleFeatureSource featureSource = memory.getFeatureSource(typeName);
-
+    public DataStore exportToShapefile(SimpleFeatureCollection sfc) throws IOException {
         SimpleFeatureType ft = sfc.getSchema();
         String typeName = ft.getTypeName();
 
@@ -727,7 +729,8 @@ public class GISMap {
         String typeName = ft.getTypeName();
 
         String fileName = ft.getTypeName();
-        File file = new File("DataStore",fileName+".shp");
+        //File file = new File("DataStore",fileName+".shp");
+        File file = new File(FileSystemView.getFileSystemView().getDefaultDirectory().getPath()+"\\A Part 3"+"\\1 Rezultatai",fileName+".shp");
 
         Map<String, java.io.Serializable> creationParams = new HashMap<>();
         creationParams.put("url", URLs.fileToUrl(file));
@@ -798,59 +801,5 @@ public class GISMap {
         }
         System.out.println("INFO: Calculation has ended  " + LocalDateTime.now());
         System.out.println("INFO: Calculation:  " + (System.currentTimeMillis()-milis)/1000d + "s");
-    }
-
-    private DefaultTableModel part3() throws IOException {
-        DefaultTableModel model = new DefaultTableModel(new String[] {"Administracinis vienetas",
-                "<- Plotas", "Teritorija", "<- Plotas", "Santykis (%)"}, 0);
-
-        FeatureLayer featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 2);
-        FeatureSource featureSource = featureLayer.getFeatureSource();
-        SimpleFeatureCollection muniesCol = (SimpleFeatureCollection) featureSource.getFeatures();
-
-        featureLayer = (FeatureLayer) frame.getMapContent().layers().get(frame.getMapContent().layers().size() - 1);
-        featureSource = featureLayer.getFeatureSource();
-        SimpleFeatureCollection territoriesCol = (SimpleFeatureCollection) featureSource.getFeatures();
-
-        String muniesPrefix = muniesCol.getSchema().getName().getLocalPart();
-        String territoriesPrefix = territoriesCol.getSchema().getName().getLocalPart();
-
-        Intersector intersector = new Intersector(territoriesCol, muniesCol);
-        intersector.recalculateArea("Shape_Area");
-        intersector.setName(territoriesPrefix+"_intersected");
-        intersector.intersect();
-        SimpleFeatureCollection intersected = intersector.getIntersected();
-        frame.getMapContent().addLayer(new FeatureLayer(intersected,
-                SLD.createSimpleStyle(intersected.getSchema())));
-
-        String[] grouping = GroupingBuilder.build(territoriesPrefix + "_GKODAS",
-                new String[] {"LIKE 'hd%'", "= 'ms0'", "= 'pu0'", "= 'ms4'"});
-        String[] titles = new String[] {"Hidrografijos teritorijos",
-                "Medžiais ir krūmais apaugusios teritorijos",
-                "Užstatytos teritorijos", "Pramoninių sodų masyvai"};
-
-        Function function = ff.function("Collection_Sum", ff.property(territoriesPrefix + "_SHAPE_area"));
-
-        SimpleFeatureIterator iter = muniesCol.features();
-        try {
-            while (iter.hasNext()) {
-                SimpleFeature feature = iter.next();
-                String title = (String) feature.getAttribute("SAV");
-                for (int i=0 ; i<grouping.length ; i++) {
-                    Filter filter = CQL.toFilter(muniesPrefix+"_SAV = '"+title+"' AND "+grouping[i]);
-                    double result = (Double) function.evaluate(intersected.subCollection(filter));
-                    double muniArea = (Double) feature.getAttribute("PLOT");
-                    model.addRow(new String[] {title, String.valueOf(muniArea),
-                            titles[i], String.valueOf(result),
-                            String.valueOf(result*100/muniArea)});
-                }
-            }
-        } catch (CQLException ex) {
-            JExceptionReporter.showDialog(ex);
-        } finally {
-            iter.close();
-        }
-
-        return model;
     }
 }

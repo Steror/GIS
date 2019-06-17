@@ -16,6 +16,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileSystemView;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -28,15 +29,15 @@ public class ConfigWindow extends JFrame {
     JFrame frame;
 
     @Getter
-    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 50.0, distance2 = 100.0, averageSlope = 100.0;
+    Double trackLength = 100.0, trackWidth = 100.0, distance1 = 50.0, distance2 = 100.0, averageSlope = 0.15;
 
     @Getter
     @Setter
-    SimpleFeatureSource roadSFS, riverSFS, areaSFS, suitableAreaSFS, intersectedSFS;// heightSFS
+    SimpleFeatureSource roadSFS, riverSFS, areaSFS, slopeSFS, suitableAreaSFS, intersectedSFS;// heightSFS
 
     @Getter
     @Setter
-    SimpleFeatureCollection roadSFC, riverSFC, areaSFC;// heightSFC
+    SimpleFeatureCollection roadSFC, riverSFC, areaSFC, slopeSFC;// heightSFC
     @Getter
     @Setter
     SimpleFeatureCollection suitableArea, suitableArea2, unsuitableArea, intersected;
@@ -54,11 +55,11 @@ public class ConfigWindow extends JFrame {
         JLabel widthLabel = new JLabel("L2: Track Width");
         JTextField trackWidthJTF = new JTextField("100");
         JLabel distance1Label = new JLabel("D1: Distance from roads and rivers");
-        JTextField distance1JTF = new JTextField("100");
+        JTextField distance1JTF = new JTextField("50");
         JLabel distance2Label = new JLabel("D2: Distance from bodies of water, community gardens and urbanised areas");
         JTextField distance2JTF = new JTextField("100");
         JLabel slopeLabel = new JLabel("A1: Average track slope");
-        JTextField averageSlopeJTF = new JTextField("100");
+        JTextField averageSlopeJTF = new JTextField("0.15");
         frame.getContentPane().add(lengthLabel);
         frame.getContentPane().add(trackLengthJTF);
 
@@ -129,40 +130,31 @@ public class ConfigWindow extends JFrame {
         unsuitableArea = new ListFeatureCollection(sft, features);
     }
 
-    public void removeBufferedArea (SimpleFeatureCollection sfc, Double distance) throws CQLException, IOException {
+    public void removeBufferedArea (SimpleFeatureCollection sfc, Double distance) throws IOException {
         LeanBuffer leanBuffer = new LeanBuffer("BUF"+sfc.getSchema().getTypeName(), sfc, distance);
         leanBuffer.buffer();
         SimpleFeatureCollection buffered = leanBuffer.getBuffered();
         saveAndLoad(buffered);
         Intersector intersector = new Intersector(suitableArea, buffered);
-        //suitableArea = suitableAreaSFS.getFeatures();
         intersector.recalculateLength("Shape_Leng");
         intersector.recalculateArea("Shape_Area");
         intersector.setPrefixes(pre1, pre2);
         intersector.intersect();
         SimpleFeatureCollection intersected = intersector.getIntersected();
-        //intersectedSFS = saveAndLoad(intersected);
-        //intersected = intersectedSFS.getFeatures();
 
         List<SimpleFeature> features = Collections.synchronizedList(new ArrayList<>());
         SimpleFeatureType sft = suitableArea.getSchema();
-        String suitableName = suitableArea.getSchema().getTypeName();
-        String intersectedName = intersected.getSchema().getTypeName();
         long milis = System.currentTimeMillis();
 
         try (SimpleFeatureIterator iter = suitableArea.features()) {
             while (iter.hasNext()) {
                 SimpleFeature feature = iter.next();
                 long goodId = (long) feature.getAttribute("OBJECTID");
-                //System.out.println("GOOD: "+goodId);
-                //goodId = goodId.replace(suitableName,"");
                 boolean isFound = false;
                 second: try (SimpleFeatureIterator iter2 = intersected.features()) {
                     while (iter2.hasNext()) {
                         SimpleFeature feature2 = iter2.next();
                         long badId = (long) feature2.getAttribute(pre1+"OBJECTID");
-                        //System.out.println("BAD: "+badId);
-                        //badId = badId.replace(intersectedName,"");
                         if (badId == goodId) {
                             isFound = true;
                             break second;
@@ -177,10 +169,32 @@ public class ConfigWindow extends JFrame {
         System.out.println("INFO: remove buffered: " + (System.currentTimeMillis()-milis)/1000d + "s");
         suitableArea = new ListFeatureCollection(sft, features);
         //suitableAreaSFS = saveAndLoad(suitableArea);
-        //suitableArea = suitableAreaSFS.getFeatures();
     }
 
-    //public findPeaks ()
+    public void removeSlopeArea (SimpleFeatureCollection sfc, Double averageSlope) throws IOException {
+        Intersector intersector = new Intersector(suitableArea, sfc);
+        intersector.recalculateLength("Shape_Leng");
+        intersector.recalculateArea("Shape_Area");
+        intersector.setPrefixes(pre1, pre2);
+        intersector.intersect();
+        SimpleFeatureCollection intersected = intersector.getIntersected();
+
+        List<SimpleFeature> features = Collections.synchronizedList(new ArrayList<>());
+        SimpleFeatureType sft = intersected.getSchema();
+        long milis = System.currentTimeMillis();
+
+        try (SimpleFeatureIterator iter = intersected.features()) {
+            while (iter.hasNext()) {
+                SimpleFeature feature = iter.next();
+                double slope = (double) feature.getAttribute(pre2+"Slope");
+                if (slope >= averageSlope)
+                    features.add(feature);
+            }
+        }
+        System.out.println("INFO: remove smaller slopes: " + (System.currentTimeMillis()-milis)/1000d + "s");
+        suitableArea = new ListFeatureCollection(sft, features);
+        //suitableAreaSFS = saveAndLoad(suitableArea);
+    }
 
     public SimpleFeatureSource saveAndLoad(SimpleFeatureCollection sfc) throws IOException {
 
@@ -188,7 +202,7 @@ public class ConfigWindow extends JFrame {
         String typeName = ft.getTypeName();
 
         String fileName = ft.getTypeName();
-        File file = new File("DataStore",fileName+".shp");
+        File file = new File(FileSystemView.getFileSystemView().getDefaultDirectory().getPath()+"\\A Part 3"+"\\1 Rezultatai",fileName+".shp");
 
         Map<String, Serializable> creationParams = new HashMap<>();
         creationParams.put("url", URLs.fileToUrl(file));
@@ -217,11 +231,5 @@ public class ConfigWindow extends JFrame {
         System.out.println("INFO: Finished export" + LocalDateTime.now());
 
         return dataStore.getFeatureSource(typeName);
-
-        //Style shpStyle = createDefaultStyle();
-        //Layer shpLayer = new FeatureLayer(featureSource, shpStyle);
-        //map.addLayer(shpLayer);
-        //frame.getMapPane().repaint();
-        //return dataStore;
     }
 }
